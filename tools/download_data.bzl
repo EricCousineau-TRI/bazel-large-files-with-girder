@@ -40,7 +40,7 @@ def large_file(file, download_mode='normal'):
         name = name,
         srcs = [sha_file],
         outs = [file],
-        tool = "//tools:download_data_script",
+        tool = "//tools:download_data.sh",
         arguments = ["$(location {})".format(sha_file), file],
         visibility = ["//visibility:public"],
     )
