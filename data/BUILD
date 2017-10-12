@@ -25,4 +25,3 @@ genrule(
   tools=["//tools:download_data"],
   visibility=["//visibility:public"],
 )
-
