@@ -2,6 +2,8 @@
 
 set -e -u
 
+env
+
 # Get script inputs
 if [ "$#" -ne 2 ]; then
   echo "usage: $0 <sha_file> <output_file>"
@@ -28,3 +30,6 @@ girder_token=$(curl -L -s --data "key=${GIRDER_API_KEY}" \
 # Otherwise, it should print a message saying the file has changed, and how to revert this change (if they so desire).
 
 curl -L --progress-bar -H "Girder-Token: ${girder_token}" -o ${output_filepath} -O ${GIRDER_API_ROOT}/file/hashsum/sha512/${sha}/download
+
+# Test the SHA
+echo $sha "$output_filepath" | sha512sum -c --status || { echo "Bad checksum. Failing."; exit 1; }
