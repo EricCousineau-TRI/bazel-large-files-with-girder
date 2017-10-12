@@ -2,9 +2,9 @@ def _genrule_shell_env_impl(ctx):
     ctx.actions.run(
         inputs = ctx.files.srcs,
         outputs = ctx.outputs.outs,
-        arguments = ctx.attr.arguemnts,
-        executable = ctx.executable.cmd,
-        mnemonic="shell_env",
+        arguments = ctx.attr.arguments,
+        executable = ctx.executable.tool,
+        mnemonic="GenruleShell",
         use_default_shell_env=True,
     )
 
