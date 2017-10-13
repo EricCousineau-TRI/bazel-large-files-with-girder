@@ -44,3 +44,6 @@ sha512sum "$output_filepath"
 sha_expected="${sha} ${output_filepath}"
 set +x
 echo ${sha_expected} | sha512sum -c --status || { echo "Bad checksum. Failing."; exit 1; }
+
+# TODO(eric.cousineau): Implement simple caching: ~/.bazel-girder/sha512/{hash}
+# TODO(eric.cousineau): Make this script be Python.
