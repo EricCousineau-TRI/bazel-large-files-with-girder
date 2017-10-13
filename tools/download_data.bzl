@@ -12,20 +12,19 @@ def large_file(file, download_mode='normal'):
 
     name = "download_{}".format(file)
     sha_file = "{}.sha512".format(file)
-    sh_binary_env(
-        name = name,
-        srcs = [sha_file],
-        outs = [file],
-        tool = "//tools:download_data.sh",
-        arguments = ["$(location {})".format(sha_file), file],
-        visibility = ["//visibility:public"],
-    )
-    # native.genrule(
-    #   name = name,
-    #   srcs = [sha_file],
-    #   outs = [file],
-    #   cmd = "$(location //tools:download_data_script) $(location {}) $@".format(sha_file),
-    #   tools = ["//tools:download_data_script"],
-    #   local = 1,
-    #   visibility = ["//visibility:public"],
+    # sh_binary_env(
+    #     name = name,
+    #     srcs = [sha_file],
+    #     outs = [file],
+    #     tool = "//tools:download_data.sh",
+    #     arguments = ["$(location {})".format(sha_file), file],
+    #     visibility = ["//visibility:public"],
     # )
+    native.genrule(
+      name = name,
+      srcs = [sha_file],
+      outs = [file],
+      cmd = "$(location //tools:download_data_script) $(location {}) $@".format(sha_file),
+      tools = ["//tools:download_data_script"],
+      visibility = ["//visibility:public"],
+    )

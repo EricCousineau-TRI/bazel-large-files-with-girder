@@ -2,8 +2,6 @@
 
 set -e -u
 
-env
-
 # Get script inputs
 if [ "$#" -ne 2 ]; then
   echo "usage: $0 <sha_file> <output_file>"
@@ -14,10 +12,15 @@ output_filepath=$2
 
 sha=$(cat $sha_file | tr -d " \n\r")
 
-# # TODO (jc) This should be obtain from the environment / settings
-# GIRDER_API_KEY=<GIRDER_API_KEY>
-# GIRDER_SERVER=http://ec2-184-72-193-101.compute-1.amazonaws.com/
-# GIRDER_API_ROOT=${GIRDER_SERVER}/api/v1
+
+# TODO (jc) This should be obtain from the environment / settings
+bg_remote=main
+get_conf() {
+    git config --file ~/.gitconfig bazel-girder.${bg_remote}.${1}
+}
+GIRDER_API_KEY=$(get_conf api-key)
+GIRDER_SERVER=$(get_conf server)
+GIRDER_API_ROOT=${GIRDER_SERVER}/api/v1
 
 # Get token
 girder_token=$(curl -L -s --data "key=${GIRDER_API_KEY}" \
@@ -32,4 +35,8 @@ girder_token=$(curl -L -s --data "key=${GIRDER_API_KEY}" \
 curl -L --progress-bar -H "Girder-Token: ${girder_token}" -o ${output_filepath} -O ${GIRDER_API_ROOT}/file/hashsum/sha512/${sha}/download
 
 # Test the SHA
-echo $sha "$output_filepath" | sha512sum -c --status || { echo "Bad checksum. Failing."; exit 1; }
+set -x
+sha512sum "$output_filepath"
+sha_expected="${sha} ${output_filepath}"
+set +x
+echo ${sha_expected} | sha512sum -c --status || { echo "Bad checksum. Failing."; exit 1; }
