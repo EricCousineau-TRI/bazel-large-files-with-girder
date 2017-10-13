@@ -19,9 +19,20 @@ export GIT_CONFIG=~/.gitconfig
 bg_remote=main
 get_conf() {
     key=bazel-girder.${1}
-    git config ${key} || { echo "Could not resolve 'git config ${key}'" >&2; exit 1; }
+    default=${2-}
+    if ! git config ${key}; then
+        # Use default
+        if [[ -n ${default} ]]; then
+            echo ${default};
+        else
+            echo "Could not resolve 'git config ${key}'" >&2;
+            exit 1
+        fi
+    fi
 }
-bg_remote=$(get_conf primary)
+bg_remote=$(get_conf primary main)
+bg_cache=$(get_conf cache-dir ~/.cache/bazel-girder)
+echo "${bg_cache}" >&2
 GIRDER_API_KEY=$(get_conf ${bg_remote}.api-key)
 GIRDER_SERVER=$(get_conf ${bg_remote}.server)
 GIRDER_API_ROOT=${GIRDER_SERVER}/api/v1
@@ -45,5 +56,5 @@ sha_expected="${sha} ${output_filepath}"
 set +x
 echo ${sha_expected} | sha512sum -c --status || { echo "Bad checksum. Failing."; exit 1; }
 
-# TODO(eric.cousineau): Implement simple caching: ~/.bazel-girder/sha512/{hash}
+# TODO(eric.cousineau): Implement simple caching: ~/.bazel-girder/sha512/{hash} - or use GIT_CONIG, bazel-girder.cache-dir
 # TODO(eric.cousineau): Make this script be Python.
