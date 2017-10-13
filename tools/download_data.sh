@@ -12,14 +12,18 @@ output_filepath=$2
 
 sha=$(cat $sha_file | tr -d " \n\r")
 
+# NOTE: `git config` does not normally pass through?... Why?
+export GIT_CONFIG=~/.gitconfig
 
 # TODO (jc) This should be obtain from the environment / settings
 bg_remote=main
 get_conf() {
-    git config --file ~/.gitconfig bazel-girder.${bg_remote}.${1}
+    key=bazel-girder.${1}
+    git config ${key} || { echo "Could not resolve 'git config ${key}'" >&2; exit 1; }
 }
-GIRDER_API_KEY=$(get_conf api-key)
-GIRDER_SERVER=$(get_conf server)
+bg_remote=$(get_conf primary)
+GIRDER_API_KEY=$(get_conf ${bg_remote}.api-key)
+GIRDER_SERVER=$(get_conf ${bg_remote}.server)
 GIRDER_API_ROOT=${GIRDER_SERVER}/api/v1
 
 # Get token
