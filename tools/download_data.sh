@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-set -e -u
+set -e -u -x
+
+cur_dir=$(cd $(dirname $0) && pwd)
 
 # Get script inputs
 if [ "$#" -ne 2 ]; then
@@ -12,29 +14,17 @@ output_filepath=$2
 
 sha=$(cat $sha_file | tr -d " \n\r")
 
-# NOTE: `git config` does not normally pass through?... Why?
-export GIT_CONFIG=~/.gitconfig
-
 # TODO (jc) This should be obtain from the environment / settings
 bg_remote=main
 get_conf() {
-    key=bazel-girder.${1}
-    default=${2-}
-    if ! git config ${key}; then
-        # Use default
-        if [[ -n ${default} ]]; then
-            echo ${default};
-        else
-            echo "Could not resolve 'git config ${key}'" >&2;
-            exit 1
-        fi
-    fi
+    ${cur_dir}/girder_conf.sh "$@" || exit 1
 }
-bg_remote=$(get_conf primary main)
-bg_cache=$(get_conf cache-dir ~/.cache/bazel-girder)
+bg_remote=$(get_conf .remote-master "master")
+bg_cache=$(get_conf .cache-dir "~/.cache/bazel-girder")
+
 echo "${bg_cache}" >&2
-GIRDER_API_KEY=$(get_conf ${bg_remote}.api-key)
-GIRDER_SERVER=$(get_conf ${bg_remote}.server)
+GIRDER_SERVER=$(get_conf -remote."${bg_remote}".url)
+GIRDER_API_KEY=$(get_conf -auth."${GIRDER_SERVER}".api-key)
 GIRDER_API_ROOT=${GIRDER_SERVER}/api/v1
 
 # Get token
