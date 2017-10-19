@@ -7,26 +7,21 @@ repo_conf=${cur_dir}/girder.gitconfig
 verbose=1
 
 eecho() { echo "$@" >&2; }
+debug() { [[ -n ${verbose} ]] && eecho "$@"; }
 
 get_conf() {
     key=bazel-girder.${1}
     default=${2-}
-    if ! git config ${key}; then
-        # Attempt to use repostiory local configuration.
-        if ! git config -f ${repo_conf} ${key}; then
-            # Use default
-            if [[ -n ${default} ]]; then
-                [[ -n ${verbose} ]] && eecho "Use default"
-                echo ${default};
-            else
-                eecho "Could not resolve 'git config ${key}'"
-                exit 1
-            fi
-        else
-            [[ -n ${verbose} ]] && eecho "Use ${repo_conf}"
-        fi
+    if git config -f ${repo_conf} ${key}; then
+        debug "Use repo: ${repo_conf}"
+    elif git config ${key}; then
+        debug "Use 'git config'"
+    elif [[ -n ${default} ]]; then
+        echo ${default}
+        debug "Use default"
     else
-        [[ -n ${verbose} ]] && eecho "Use git config"
+        eecho "Could not resolve key: ${key}"
+        exit 1
     fi
 }
 
