@@ -1,0 +1,6 @@
+[bazel-girder]
+    primary = main
+    devel = main
+[bazel-girder.main]
+    server = https://drake-girder.csail.mit.edu
+    folder-id = 59e12e91c3b64e0f87021c77
