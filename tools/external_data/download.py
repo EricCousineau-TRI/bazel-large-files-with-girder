@@ -29,11 +29,13 @@ api_key = get_conf('-auth.{}.api-key'.format(server))
 
 api_url = "%s/api/v1" % server
 
-token_raw = subshell("curl -L -s --data key={key} {api_url}/api_key/token".format(**locals()))
-token = json.load(token_raw)["authToken"]["token"]
+token_raw = subshell("curl -L -s --data key={api_key} {api_url}/api_key/token".format(**locals()))
+token = json.loads(token_raw)["authToken"]["token"]
 
-subshell('curl -L --progress-bar -H "Girder-Token: {token}" ' +
-         '-o {args.output_file} -O ${api_url}/file/hashsum/sha512/{sha}/download'.format(**locals()))
+subshell((
+    'curl -L --progress-bar -H "Girder-Token: {token}" ' +
+    '-o {args.output_file} -O {api_url}/file/hashsum/sha512/{sha}/download'
+).format(**locals()))
 
 # Test the SHA.
 run("sha512sum -c --status", input="{sha} {args.output_file}".format(**locals()))

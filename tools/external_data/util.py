@@ -22,6 +22,7 @@ def subshellc(cmd, strip=True):
 
 
 def run(cmd, input, strip=True):
+    PIPE = subprocess.PIPE
     p = subprocess.Popen(cmd, shell=isinstance(cmd, str), stdin=PIPE, stdout=PIPE, stderr=PIPE)
     output, err = p.communicate(input)
     if p.returncode != 0:
