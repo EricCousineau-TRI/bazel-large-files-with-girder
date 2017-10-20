@@ -67,7 +67,3 @@ def sha_exists(api_url, sha):
 
 def eprint(*args):
     print(*args, file=sys.stderr)
-
-
-
-

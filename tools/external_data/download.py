@@ -16,8 +16,11 @@ parser.add_argument('output_file', type=str)
 
 args = parser.parse_args()
 
+if not args.sha_file.startswith('/') or not args.output_file.startswith('/'):
+    raise RuntimeError("Must specify absolute paths")
+
 sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(__file__), '..')))
-from external_data.util import run, subshell, get_conf
+from external_data.util import run, subshell, get_conf, eprint
 
 sha = subshell("cat {}".format(args.sha_file))
 
