@@ -19,6 +19,5 @@ load("//tools:download_data.bzl", "large_file")
 
 large_file(
   file = "dragon.obj",
-  use_workspace = False,
-  # download_mode = 'normal',
+  mode = 'normal',
 )

@@ -4,6 +4,8 @@ set -e -u
 
 export >&2
 
+eecho() { echo "$@" >&2; }
+
 cur_dir=$(cd $(dirname $0) && pwd)
 sandbox_dir=${cur_dir}/download_data_script.runfiles/__main__
 
@@ -12,7 +14,18 @@ sandbox_dir=${cur_dir}/download_data_script.runfiles/__main__
 
 # TODO(eric.cousineau): How to determine if the file already exists in the workspace at target build time?
 # echo "Workspace: $(bazel info workspace)" >&2
-echo "Actual file: $(readlink -f $0)" >&2
+eecho "Actual file: $(readlink -f $0)"
+
+no_cache=
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --no_cache)
+      no_cache=1;;
+    *)
+      break;;
+  esac
+  shift
+done
 
 # Get script inputs
 if [ "$#" -ne 2 ]; then
