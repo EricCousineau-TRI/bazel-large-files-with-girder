@@ -1,4 +1,4 @@
-load("//tools/external_data:macros.bzl", "external_data")
+load("//tools/external_data:macros.bzl", "external_data", "external_data_sha_group")
 
 #
 # Larger file associated with a key file and available
@@ -8,6 +8,11 @@ load("//tools/external_data:macros.bzl", "external_data")
 #
 
 external_data(
-  file = "dragon.obj",
-  # mode = 'devel',
+    file = "dragon.obj",
+    # mode = 'devel',
+)
+
+external_data_sha_group(
+    name = "extra",
+    sha_files = glob(['extra*.sha512']),
 )

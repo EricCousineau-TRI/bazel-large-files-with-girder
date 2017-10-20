@@ -1,5 +1,5 @@
 ENABLE_WARN = True
-VERBOSE = True
+VERBOSE = False
 
 SHA_SUFFIX = ".sha512"
 
@@ -65,19 +65,19 @@ def external_data(file, mode='normal'):
 def external_data_group(name, files, mode='normal'):
     """ @see external_data """
     for file in files:
-        external_data(files, mode)
+        external_data(file, mode)
     native.filegroup(
         name = name,
         srcs = files,
     )
 
 
-def external_data_group_sha(name, sha_files, mode='normal'):
+def external_data_sha_group(name, sha_files, mode='normal'):
     """ Enable globbing of *.sha512 files.
     @see external_data """
     files = []
     for sha_file in sha_files:
-        if not sha_file.endswith(SHA_SUFFIX)
+        if not sha_file.endswith(SHA_SUFFIX):
             fail("SHA file does end with '{}': '{}'".format(SHA_SUFFIX, sha_file))
         file = sha_file[:-len(SHA_SUFFIX)]
         files.append(file)
