@@ -43,7 +43,7 @@ def upload(conf, filepath, do_cache):
         size = os.stat(filepath).st_size
         with open(filepath, 'rb') as fd:
             print("Uploading: {}".format(filepath))
-            gc.uploadFile(folder_id, fd, name=item_name, size=size, parentType='folder', reference=ref)
+            gc.uploadFile(conf.folder_id, fd, name=item_name, size=size, parentType='folder', reference=ref)
     else:
         print("File already uploaded")
 
