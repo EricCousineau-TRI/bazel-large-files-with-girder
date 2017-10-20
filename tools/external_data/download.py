@@ -9,14 +9,15 @@ import argparse
 import json
 from subprocess import Popen, PIPE
 
-from .util import run, subshell, get_conf
-
 parser = argparse.ArgumentParser()
 parser.add_argument('--no_cache', action='store_true')
 parser.add_argument('sha_file', type=str)
 parser.add_argument('output_file', type=str)
 
 args = parser.parse_args()
+
+sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(__file__), '..')))
+from external_data.util import run, subshell, get_conf
 
 sha = subshell("cat {}".format(args.sha_file))
 
@@ -35,6 +36,6 @@ subshell('curl -L --progress-bar -H "Girder-Token: {token}" ' +
          '-o {args.output_file} -O ${api_url}/file/hashsum/sha512/{sha}/download'.format(**locals()))
 
 # Test the SHA.
-run("sha512sum -c --status", input="{sha} {args.output_file}".format(**locals())
+run("sha512sum -c --status", input="{sha} {args.output_file}".format(**locals()))
 
 # TODO: Place in cache directory.
