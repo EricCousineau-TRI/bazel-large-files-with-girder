@@ -1,14 +1,11 @@
 ENABLE_WARN = True
 VERBOSE = True
 
-def external_data(file, mode='normal', sha='file'):
+def external_data(file, mode='normal'):
     """
     Macro for defining a large file.
 
     file: Name of the file to be downloaded.
-    sha:
-        'file' - Use the contents "${file}.sha512"
-        <sha> - Use the given sha.
     mode:
         'normal' - Use cached file if possible. Otherwise download the file.
         'devel' - Use local workspace (for development).
@@ -32,17 +29,19 @@ def external_data(file, mode='normal', sha='file'):
     elif mode in ['normal', 'no_cache']:
         name = "download_{}".format(file)
         sha_file = "{}.sha512".format(file)
+        tool_name = "external_data_download"
+        tool = "//tools:{}".format(tool_name)
 
         # Binary:
-        cmd = "$(location //tools:download_data_script) "
-        # Argumetn: Caching.
+        cmd = "$(location {}) ".format(tool)
+        # Argument: Indicate we're in Bazel land.
+        # Since this is a build rule, our PWD will not relate to the original tool directory.
+        # cmd += "--workspace {}.runfiles/__main__ ".format(tool_name)
+        # Argument: Caching.
         if mode == 'no_cache':
             cmd += "--no_cache "
         # Argument: SHA file or SHA.
-        if sha == 'file':
-            cmd += "--sha_file $(location {}) ".format(sha_file)
-        else:
-            cmd += "--sha {}".format(sha)
+        cmd += "$(location {}) ".format(sha_file)
         # Argument: Output file.
         cmd += " $@"
 
@@ -55,7 +54,7 @@ def external_data(file, mode='normal', sha='file'):
           srcs = [sha_file],
           outs = [file],
           cmd = cmd,
-          tools = ["//tools:download_data_script"],
+          tools = [tool],
           tags = ["external_data"],
           local = 1,  # Just changes `execroot`, but paths are still Bazel-fied.
           visibility = ["//visibility:public"],

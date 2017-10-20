@@ -7,20 +7,27 @@ export >&2
 eecho() { echo "$@" >&2; }
 
 cur_dir=$(cd $(dirname $0) && pwd)
-sandbox_dir=${cur_dir}/download_data_script.runfiles/__main__
+# Default workspace directory.
+workspace_dir=$(dirname ${cur_dir})
 
 # TODO(eric.cousineau): Why does this not get run within runfiles???
 # How do I get access to runfiles?
 
 # TODO(eric.cousineau): How to determine if the file already exists in the workspace at target build time?
 # echo "Workspace: $(bazel info workspace)" >&2
+eecho "Cur dir: ${cur_dir}"
+eecho "Pwd: ${pwd}"
 eecho "Actual file: $(readlink -f $0)"
+
 
 no_cache=
 while [[ $# -gt 0 ]]; do
   case $1 in
+    --workspace)
+        workspace_dir=$(cd ${2} && pwd)
+        shift;;
     --no_cache)
-      no_cache=1;;
+        no_cache=1;;
     *)
       break;;
   esac
@@ -40,8 +47,7 @@ sha=$(cat $sha_file | tr -d " \n\r")
 # TODO (jc) This should be obtain from the environment / settings
 bg_remote=main
 get_conf() {
-    #${cur_dir}/girder_conf.sh "$@" || exit 1
-    ${sandbox_dir}/tools/girder_conf.sh "$@" || exit 1
+    ${workspace_dir}/tools/girder_conf.sh "$@" || exit 1
 }
 bg_remote=$(get_conf .remote-master "master")
 bg_cache=$(get_conf .cache-dir "~/.cache/bazel-girder")
