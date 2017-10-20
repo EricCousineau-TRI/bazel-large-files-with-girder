@@ -3,43 +3,19 @@
 """This script allows to upload data file revisoned based on a canonical path.
 """
 
+from __future__ import absolute_import, print_function
 import girder_client
 import json
 import os
-import subprocess
 import sys
 import textwrap
 
 from datetime import datetime
 
+from .util import subshell, get_conf, sha_exists
+
 cur_dir = os.path.dirname(__file__)
 project_root = os.path.join(cur_dir, "..")
-
-def _get_conf(key, default=None):
-    exe = os.path.join(project_root, 'tools', 'girder_conf.sh')
-    cmd = [exe, key]
-    if default:
-        cmd.append(default)
-    return _subshell(cmd)
-
-def _sha_exists(api_url, sha):
-    """ Returns true if the given SHA exists on the given server. """
-    # TODO(eric.cousineau): Check `folder_id` and ensure it lives in the same place?
-    # This is necessary if we have users with the same file?
-    # What about authentication? Optional authentication / public access?
-
-    # TODO(eric.cousineau): Check if the file has already been uploaded.
-    # @note `curl --head ${url}` will fetch the header only.
-    # TODO(eric.cousineau): Get token?
-    url = "{api_url}/file/hashsum/sha512/{sha}/download".format(api_url=api_url, sha=sha)
-    first_line = _subshell("curl -s --head '{}' | head -n 1".format(url))
-    print(first_line)
-    if first_line == "HTTP/1.1 404 Not Found":
-        return False
-    elif first_line == "HTTP/1.1 303 See Other":
-        return True
-    else:
-        raise RuntimeError("Unknown response: {}".format(first_line))
 
 
 def upload(server, api_key, folder_id, project_root, filepath):
@@ -55,7 +31,7 @@ def upload(server, api_key, folder_id, project_root, filepath):
     print("project_root .......: %s" % project_root)
     print("versioned_filepath .: %s" % versioned_filepath)
 
-    sha = _subshell(['sha512sum', filepath]).split(' ')[0]
+    sha = subshell(['sha512sum', filepath]).split(' ')[0]
     print("sha512 .............: %s" % sha)
 
     if not _sha_exists(api_url, sha):
@@ -99,10 +75,10 @@ def display_error(text):
 
 
 def main():
-    remote = _get_conf('.remote-master', "master")
-    server = _get_conf('-remote.{}.url'.format(remote))
-    folder_id = _get_conf('-remote.{}.folder-id'.format(remote))
-    api_key = _get_conf('-auth.{}.api-key'.format(server))
+    remote = get_conf('.remote-master', "master")
+    server = get_conf('-remote.{}.url'.format(remote))
+    folder_id = get_conf('-remote.{}.folder-id'.format(remote))
+    api_key = get_conf('-auth.{}.api-key'.format(server))
 
     if len(sys.argv) != 2:
         display_error("'/path/to/filename' is not specified")
@@ -112,24 +88,6 @@ def main():
     filepath = sys.argv[1]
 
     upload(server, api_key, folder_id, project_root, filepath)
-
-
-def _subshell(cmd, suppress_error=False, strip=True):
-    try:
-        if isinstance(cmd, list):
-            output = subprocess.check_output(cmd)
-        else:
-            assert isinstance(cmd, str)
-            output = subprocess.check_output(cmd, shell=True)
-    except subprocess.CalledProcessError as e:
-        if suppress_error:
-            return None
-        else:
-            raise e
-    if strip:
-        return output.strip()
-    else:
-        return output
 
 
 if __name__ == '__main__':
