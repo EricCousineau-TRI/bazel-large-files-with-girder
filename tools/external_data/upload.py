@@ -12,8 +12,8 @@ import argparse
 
 from datetime import datetime
 
-cur_dir = os.path.dirname(__file__)
-import .util
+sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(__file__), '..')))
+from external_data import util
 
 
 def upload(conf, filepath, do_cache):
@@ -24,6 +24,14 @@ def upload(conf, filepath, do_cache):
     print("folder_id ..........: %s" % conf.folder_id)
     print("filepath ...........: %s" % filepath)
     print("item_name ..........: %s" % item_name)
+
+    if conf.project_root:
+        versioned_filepath = os.path.relpath(filepath, conf.project_root)
+        print("project_root .......: %s" % project_root)
+        print("versioned_filepath .: %s" % versioned_filepath)
+        ref = json.dumps({'versionedFilePath': versioned_filepath})
+    else:
+        ref = None
 
     sha = util.subshell(['sha512sum', filepath]).split(' ')[0]
     print("sha512 .............: %s" % sha)
@@ -56,11 +64,11 @@ def upload(conf, filepath, do_cache):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--do_cache', type='store_true')
+    parser.add_argument('--do_cache', action='store_true')
     parser.add_argument('filepath', type=str)
     args = parser.parse_args()
 
-    conf = get_all_conf(do_auth=True)
+    conf = util.get_all_conf(do_auth=True)
     upload(conf, args.filepath, args.do_cache)
 
 

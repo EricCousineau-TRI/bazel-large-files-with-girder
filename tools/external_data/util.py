@@ -11,6 +11,8 @@ conf_exe = os.path.join(cur_dir, 'girder', 'conf.sh')
 class _Config(object):
     def __init__(self, remote="master", do_auth=False):
         d = self.__dict__
+        # For now, disable project root stuff.
+        self.project_root = None
         self.remote = remote
         self.server = _get_conf('-remote.{remote}.url'.format(**d))
         self.folder_id = _get_conf('-remote.{remote}.folder-id'.format(**d))
