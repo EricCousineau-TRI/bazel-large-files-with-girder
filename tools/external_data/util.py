@@ -44,11 +44,9 @@ def is_sha_uploaded(conf, sha):
     # TODO(eric.cousineau): Check if the file has already been uploaded.
     # @note `curl --head ${url}` will fetch the header only.
     # TODO(eric.cousineau): Get token?
-    url = "{api_url}/file/hashsum/sha512/{sha}/download".format(sha=sha, **conf.__dict__)
+    url = "{conf.api_url}/file/hashsum/sha512/{sha}/download".format(conf=conf, sha=sha)
     first_line = subshell(
         'curl -s -H "Girder-Token: {conf.token}" --head "{url}" | head -n 1'.format(conf=conf, url=url))
-    print(first_line)
-    exit(2)
     if first_line == "HTTP/1.1 404 Not Found":
         return False
     elif first_line == "HTTP/1.1 303 See Other":
