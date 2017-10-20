@@ -30,5 +30,6 @@ def large_file(file, download_mode='normal'):
       cmd = "$(location //tools:download_data_script) $(location {}) $@".format(sha_file),
       tools = ["//tools:download_data_script"],
       tags = ["large_file"],
+      # local = 1,  # Just changes `execroot`, but paths are still verbose.
       visibility = ["//visibility:public"],
     )
