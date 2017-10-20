@@ -1,10 +1,14 @@
-#load(':hack.bzl', 'sh_binary_env')
-
 ENABLE_WARN = True
+VERBOSE = True
 
-# Macro for defining a large file
-def large_file(file, mode='normal'):
+def external_data(file, mode='normal', sha='file'):
     """
+    Macro for defining a large file.
+
+    file: Name of the file to be downloaded.
+    sha:
+        'file' - Use the contents "${file}.sha512"
+        <sha> - Use the given sha.
     mode:
         'normal' - Use cached file if possible. Otherwise download the file.
         'devel' - Use local workspace (for development).
@@ -29,10 +33,22 @@ def large_file(file, mode='normal'):
         name = "download_{}".format(file)
         sha_file = "{}.sha512".format(file)
 
+        # Binary:
         cmd = "$(location //tools:download_data_script) "
+        # Argumetn: Caching.
         if mode == 'no_cache':
             cmd += "--no_cache "
-        cmd += "$(location {}) $@".format(sha_file)
+        # Argument: SHA file or SHA.
+        if sha == 'file':
+            cmd += "--sha_file $(location {}) ".format(sha_file)
+        else:
+            cmd += "--sha {}".format(sha)
+        # Argument: Output file.
+        cmd += " $@"
+
+        if VERBOSE:
+            print("\nexternal_data(file = '{}', mode = '{}'):".format(file, mode) +
+                  "\n  cmd: {}".format(cmd))
 
         native.genrule(
           name = name,
@@ -40,9 +56,19 @@ def large_file(file, mode='normal'):
           outs = [file],
           cmd = cmd,
           tools = ["//tools:download_data_script"],
-          tags = ["large_file"],
+          tags = ["external_data"],
           local = 1,  # Just changes `execroot`, but paths are still Bazel-fied.
           visibility = ["//visibility:public"],
         )
     else:
         fail("Invalid mode: {}".format(mode))
+
+
+def external_data_group(name, files, mode='normal'):
+    """ @see external_data """
+    for file in files:
+        external_data(files, mode)
+    native.filegroup(
+        name = name,
+        srcs = files,
+    )

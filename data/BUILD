@@ -1,14 +1,4 @@
-load("//tools:download_data.bzl", "large_file")
-#
-# Very small file directly added to the source tree can be
-# exported using "exports_files". Exporting a file is required
-# so that it can be added as test dependency using this.
-#
-
-#exports_files([
-#  "very_small_dragon.obj"
-#])
-
+load("//tools:external_data.bzl", "external_data")
 
 #
 # Larger file associated with a key file and available
@@ -17,7 +7,7 @@ load("//tools:download_data.bzl", "large_file")
 # them when needed.
 #
 
-large_file(
+external_data(
   file = "dragon.obj",
-  mode = 'devel',
+  # mode = 'devel',
 )

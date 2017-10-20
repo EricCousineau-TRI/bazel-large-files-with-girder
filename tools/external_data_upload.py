@@ -30,6 +30,7 @@ def _sha_exists(api_url, sha):
 
     # TODO(eric.cousineau): Check if the file has already been uploaded.
     # @note `curl --head ${url}` will fetch the header only.
+    # TODO(eric.cousineau): Get token?
     url = "{api_url}/file/hashsum/sha512/{sha}/download".format(api_url=api_url, sha=sha)
     first_line = _subshell("curl -s --head '{}' | head -n 1".format(url))
     print(first_line)
