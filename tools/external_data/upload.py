@@ -13,10 +13,10 @@ import argparse
 from datetime import datetime
 
 cur_dir = os.path.dirname(__file__)
-from .util import get_all_conf, subshell, get_conf, sha_exists
+import .util
 
 
-def upload(conf, filepath):
+def upload(conf, filepath, do_cache):
     filepath = os.path.abspath(filepath)
     item_name = "%s %s" % (os.path.basename(filepath), datetime.utcnow().isoformat())
 
@@ -25,10 +25,10 @@ def upload(conf, filepath):
     print("filepath ...........: %s" % filepath)
     print("item_name ..........: %s" % item_name)
 
-    sha = subshell(['sha512sum', filepath]).split(' ')[0]
+    sha = util.subshell(['sha512sum', filepath]).split(' ')[0]
     print("sha512 .............: %s" % sha)
 
-    if not is_sha_uploaded(conf, sha):
+    if not util.is_sha_uploaded(conf, sha):
         gc = girder_client.GirderClient(apiUrl=conf.api_url)
         gc.authenticate(apiKey=conf.api_key)
 
@@ -46,25 +46,22 @@ def upload(conf, filepath):
         fd.write(sha)
 
     # Place copy in cache.
-    cache_path = get_sha_cache_path(conf, sha)
-    print("Cache path: {}".format(cache_path))
-    subshell(['cp', filepath, cache_path])
+    if do_cache:
+        cache_path = util.get_sha_cache_path(conf, sha, create_dir=True)
+        print("Cache path: {}".format(cache_path))
+        subshell(['cp', filepath, cache_path])
 
     print("[ Done ]")
 
 
-def display_error(text):
-    print("\nerror: %s" % text)
-    display_usage()
-
-
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--do_cache', type='store_true')
     parser.add_argument('filepath', type=str)
     args = parser.parse_args()
 
     conf = get_all_conf(do_auth=True)
-    upload(conf, project_root, args.filepath)
+    upload(conf, args.filepath, args.do_cache)
 
 
 if __name__ == '__main__':
