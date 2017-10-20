@@ -47,7 +47,7 @@ def get_conf(key, default=None):
     return subshell(cmd)
 
 
-def sha_exists(api_url, sha):
+def is_sha_uploaded(conf, sha):
     """ Returns true if the given SHA exists on the given server. """
     # TODO(eric.cousineau): Check `folder_id` and ensure it lives in the same place?
     # This is necessary if we have users with the same file?
@@ -56,7 +56,7 @@ def sha_exists(api_url, sha):
     # TODO(eric.cousineau): Check if the file has already been uploaded.
     # @note `curl --head ${url}` will fetch the header only.
     # TODO(eric.cousineau): Get token?
-    url = "{api_url}/file/hashsum/sha512/{sha}/download".format(api_url=api_url, sha=sha)
+    url = "{api_url}/file/hashsum/sha512/{sha}/download".format(sha=sha, **conf.__dict__)
     first_line = subshell("curl -s --head '{}' | head -n 1".format(url))
     print(first_line)
     if first_line == "HTTP/1.1 404 Not Found":
@@ -67,8 +67,7 @@ def sha_exists(api_url, sha):
         raise RuntimeError("Unknown response: {}".format(first_line))
 
 
-def get_sha_cache_path(sha, create_dir=False):
-    cache_dir = get_conf('.cache-dir', os.path.expanduser("~/.cache/bazel-girder"))
+def get_sha_cache_path(conf, sha, create_dir=False):
     a = sha[0:2]
     b = sha[2:4]
     out_dir = os.path.join(cache_dir, a, b)
@@ -77,13 +76,14 @@ def get_sha_cache_path(sha, create_dir=False):
     return os.path.join(out_dir, sha)
 
 
-class Config(object):
+class _Config(object):
     def __init__(self, remote="master", do_auth=False):
         d = self.__dict__
         self.remote = remote
         self.server = get_conf('-remote.{remote}.url'.format(**d))
         self.folder_id = get_conf('-remote.{remote}.folder-id'.format(**d))
         self.api_url = "{server}/api/v1".format(**d)
+        self.cache_dir = get_conf('.cache-dir', os.path.expanduser("~/.cache/bazel-girder"))
 
         if do_auth:
             self.api_key = get_conf('-auth.{server}.api-key'.format(**d))
@@ -92,7 +92,7 @@ class Config(object):
 
 
 def get_all_conf(**kwargs):
-    return Config(**kwargs)
+    return _Config(**kwargs)
 
 
 def eprint(*args):
