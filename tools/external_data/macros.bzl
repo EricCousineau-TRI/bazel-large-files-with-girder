@@ -29,8 +29,8 @@ def external_data(file, mode='normal'):
     elif mode in ['normal', 'no_cache']:
         name = "download_{}".format(file)
         sha_file = "{}.sha512".format(file)
-        tool_name = "external_data_download"
-        tool = "//tools:{}".format(tool_name)
+        tool_name = "download"
+        tool = "//tools/external_data:{}".format(tool_name)
 
         # Binary:
         cmd = "$(location {}) ".format(tool)

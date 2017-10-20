@@ -1,4 +1,4 @@
-load("//tools:external_data.bzl", "external_data")
+load("//tools/external_data:macros.bzl", "external_data")
 
 #
 # Larger file associated with a key file and available

@@ -16,8 +16,9 @@ parser.add_argument('output_file', type=str)
 
 args = parser.parse_args()
 
-if not args.sha_file.startswith('/') or not args.output_file.startswith('/'):
-    raise RuntimeError("Must specify absolute paths")
+# files = [args.sha_file, args.output_file]
+# if not all(map(os.path.isabs, files)):
+#     raise RuntimeError("Must specify absolute paths:\n  {}".format("\n".join(files)))
 
 sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(__file__), '..')))
 from external_data.util import run, subshell, get_conf, eprint
