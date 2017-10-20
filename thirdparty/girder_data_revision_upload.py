@@ -60,7 +60,6 @@ def upload(server, api_key, folder_id, project_root, filepath):
     if not _sha_exists(api_url, sha):
         gc = girder_client.GirderClient(apiUrl=api_url)
 
-        # TODO(eric.cousineau): Place this in the cache, if enabled.
         gc.authenticate(apiKey=api_key)
 
         ref = json.dumps({'versionedFilePath': versioned_filepath})
@@ -77,6 +76,8 @@ def upload(server, api_key, folder_id, project_root, filepath):
     with open(sha_file, 'w') as fd:
         print("Updating sha file: {}".format(sha_file))
         fd.write(sha)
+
+    # TODO(eric.cousineau): Place this in the cache, if enabled.
 
     print("[ Done ]")
 

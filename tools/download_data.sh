@@ -17,7 +17,8 @@ sha=$(cat $sha_file | tr -d " \n\r")
 # TODO (jc) This should be obtain from the environment / settings
 bg_remote=main
 get_conf() {
-    ${cur_dir}/girder_conf.sh "$@" || exit 1
+    #${cur_dir}/girder_conf.sh "$@" || exit 1
+    tools/girder_conf.sh "$@" || exit 1
 }
 bg_remote=$(get_conf .remote-master "master")
 bg_cache=$(get_conf .cache-dir "~/.cache/bazel-girder")
