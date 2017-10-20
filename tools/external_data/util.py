@@ -2,6 +2,7 @@ from __future__ import absolute_import, print_function
 import os
 import subprocess
 import sys
+import json
 
 cur_dir = os.path.dirname(__file__)
 
@@ -64,6 +65,35 @@ def sha_exists(api_url, sha):
         return True
     else:
         raise RuntimeError("Unknown response: {}".format(first_line))
+
+
+def get_sha_cache_path(sha, create_dir=False):
+    cache_dir = get_conf('.cache-dir', os.path.expanduser("~/.cache/bazel-girder"))
+    a = sha[0:2]
+    b = sha[2:4]
+    out_dir = os.path.join(cache_dir, a, b)
+    if create_dir and not os.path.isdir(out_dir):
+        os.makedirs(out_dir)
+    return os.path.join(out_dir, sha)
+
+
+class Config(object):
+    def __init__(self, remote="master", do_auth=False):
+        d = self.__dict__
+        self.remote = remote
+        self.server = get_conf('-remote.{remote}.url'.format(**d))
+        self.folder_id = get_conf('-remote.{remote}.folder-id'.format(**d))
+        self.api_url = "{server}/api/v1".format(**d)
+
+        if do_auth:
+            self.api_key = get_conf('-auth.{server}.api-key'.format(**d))
+            token_raw = subshell("curl -L -s --data key={api_key} {api_url}/api_key/token".format(**d))
+            self.token = json.loads(token_raw)["authToken"]["token"]
+
+
+def get_all_conf(**kwargs):
+    return Config(**kwargs)
+
 
 def eprint(*args):
     print(*args, file=sys.stderr)
