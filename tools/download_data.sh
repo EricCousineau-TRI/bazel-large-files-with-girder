@@ -24,6 +24,7 @@ bg_cache=$(get_conf .cache-dir "~/.cache/bazel-girder")
 
 echo "${bg_cache}" >&2
 GIRDER_SERVER=$(get_conf -remote."${bg_remote}".url)
+# TODO(eric.cousineau): Is there a way to do this without required authentication?
 GIRDER_API_KEY=$(get_conf -auth."${GIRDER_SERVER}".api-key)
 GIRDER_API_ROOT=${GIRDER_SERVER}/api/v1
 

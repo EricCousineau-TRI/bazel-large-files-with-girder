@@ -12,6 +12,34 @@ import textwrap
 
 from datetime import datetime
 
+cur_dir = os.path.dirname(__file__)
+project_root = os.path.join(cur_dir, "..")
+
+def _get_conf(key, default=None):
+    exe = os.path.join(project_root, 'tools', 'girder_conf.sh')
+    cmd = [exe, key]
+    if default:
+        cmd.append(default)
+    return _subshell(cmd)
+
+def _sha_exists(api_url, sha):
+    """ Returns true if the given SHA exists on the given server. """
+    # TODO(eric.cousineau): Check `folder_id` and ensure it lives in the same place?
+    # This is necessary if we have users with the same file?
+    # What about authentication? Optional authentication / public access?
+
+    # TODO(eric.cousineau): Check if the file has already been uploaded.
+    # @note `curl --head ${url}` will fetch the header only.
+    url = "{api_url}/file/hashsum/sha512/{sha}/download".format(api_url=api_url, sha=sha)
+    first_line = _subshell("curl -s --head '{}' | head -n 1".format(url))
+    print(first_line)
+    if first_line == "HTTP/1.1 404 Not Found":
+        return False
+    elif first_line == "HTTP/1.1 303 See Other":
+        return True
+    else:
+        raise RuntimeError("Unknown response: {}".format(first_line))
+
 
 def upload(server, api_key, folder_id, project_root, filepath):
     api_url = "%s/api/v1" % server
@@ -29,15 +57,20 @@ def upload(server, api_key, folder_id, project_root, filepath):
     sha = _subshell(['sha512sum', filepath]).split(' ')[0]
     print("sha512 .............: %s" % sha)
 
-    gc = girder_client.GirderClient(apiUrl=api_url)
-    gc.authenticate(apiKey=api_key)
+    if not _sha_exists(api_url, sha):
+        gc = girder_client.GirderClient(apiUrl=api_url)
 
-    ref = json.dumps({'versionedFilePath': versioned_filepath})
+        # TODO(eric.cousineau): Place this in the cache, if enabled.
+        gc.authenticate(apiKey=api_key)
 
-    size = os.stat(filepath).st_size
-    with open(filepath, 'rb') as fd:
-        print("Uploading: {}".format(filepath))
-        gc.uploadFile(folder_id, fd, name=item_name, size=size, parentType='folder', reference=ref) 
+        ref = json.dumps({'versionedFilePath': versioned_filepath})
+
+        size = os.stat(filepath).st_size
+        with open(filepath, 'rb') as fd:
+            print("Uploading: {}".format(filepath))
+            gc.uploadFile(folder_id, fd, name=item_name, size=size, parentType='folder', reference=ref)
+    else:
+        print("File already uploaded")
 
     # Write SHA512
     sha_file = filepath + '.sha512'
@@ -55,11 +88,6 @@ def display_usage():
 
           %s /path/to/filename
 
-        expected environment variables:
-
-          GIRDER_SERVER .....: Url of the Girder server (e.g https://example.com)
-          GIRDER_API_KEY ....: key used to authenticate to Girder server
-          GIRDER_FOLDER_ID ..: Id of the folder to upload the file into
         """ % os.path.basename(__file__)))
 
 
@@ -69,28 +97,16 @@ def display_error(text):
 
 
 def main():
-    folder_id = os.environ.get('GIRDER_FOLDER_ID', '59307411739ba619e0eaa82e')
-    if folder_id is None:
-        display_error("GIRDER_FOLDER_ID environment variable is expected")
-        sys.exit(1)
-
-    server = os.environ.get(
-        'GIRDER_SERVER', 'http://ec2-184-72-193-101.compute-1.amazonaws.com')
-    if server is None:
-        display_error("GIRDER_SERVER environment variable is expected")
-        sys.exit(1)
-
-    api_key = os.environ.get('GIRDER_API_KEY', None)
-    if api_key is None:
-        display_error("GIRDER_API_KEY environment variable is expected")
-        sys.exit(1)
+    remote = _get_conf('.remote-master', "master")
+    server = _get_conf('-remote.{}.url'.format(remote))
+    folder_id = _get_conf('-remote.{}.folder-id'.format(remote))
+    api_key = _get_conf('-auth.{}.api-key'.format(server))
 
     if len(sys.argv) != 2:
         display_error("'/path/to/filename' is not specified")
         sys.exit(1)
 
     # TODO(eric.cousineau): Use `bazel info workspace`?
-    project_root = os.path.join(os.path.dirname(__file__), "..")
     filepath = sys.argv[1]
 
     upload(server, api_key, folder_id, project_root, filepath)
