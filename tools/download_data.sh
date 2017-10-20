@@ -1,8 +1,18 @@
 #!/usr/bin/env bash
 
-set -e -u -x
+set -e -u
+
+export >&2
 
 cur_dir=$(cd $(dirname $0) && pwd)
+sandbox_dir=${cur_dir}/download_data_script.runfiles/__main__
+
+# TODO(eric.cousineau): Why does this not get run within runfiles???
+# How do I get access to runfiles?
+
+# TODO(eric.cousineau): How to determine if the file already exists in the workspace at target build time?
+# echo "Workspace: $(bazel info workspace)" >&2
+echo "Actual file: $(readlink -f $0)" >&2
 
 # Get script inputs
 if [ "$#" -ne 2 ]; then
@@ -18,7 +28,7 @@ sha=$(cat $sha_file | tr -d " \n\r")
 bg_remote=main
 get_conf() {
     #${cur_dir}/girder_conf.sh "$@" || exit 1
-    tools/girder_conf.sh "$@" || exit 1
+    ${sandbox_dir}/tools/girder_conf.sh "$@" || exit 1
 }
 bg_remote=$(get_conf .remote-master "master")
 bg_cache=$(get_conf .cache-dir "~/.cache/bazel-girder")
