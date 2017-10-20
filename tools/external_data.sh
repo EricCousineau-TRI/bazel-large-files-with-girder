@@ -1,31 +1,12 @@
 #!/usr/bin/env bash
 
-set -e -u
-
-export >&2
-
+set -e 
 eecho() { echo "$@" >&2; }
-
-cur_dir=$(cd $(dirname $0) && pwd)
-# Default workspace directory.
-workspace_dir=$(dirname ${cur_dir})
-
-# TODO(eric.cousineau): Why does this not get run within runfiles???
-# How do I get access to runfiles?
-
-# TODO(eric.cousineau): How to determine if the file already exists in the workspace at target build time?
-# echo "Workspace: $(bazel info workspace)" >&2
-eecho "Cur dir: ${cur_dir}"
-eecho "Pwd: ${pwd}"
-eecho "Actual file: $(readlink -f $0)"
-
+die() { eecho "$@"; exit 1; }
 
 no_cache=
 while [[ $# -gt 0 ]]; do
   case $1 in
-    --workspace)
-        workspace_dir=$(cd ${2} && pwd)
-        shift;;
     --no_cache)
         no_cache=1;;
     *)
@@ -47,7 +28,7 @@ sha=$(cat $sha_file | tr -d " \n\r")
 # TODO (jc) This should be obtain from the environment / settings
 bg_remote=main
 get_conf() {
-    ${workspace_dir}/tools/girder_conf.sh "$@" || exit 1
+    tools/girder_conf.sh "$@" || exit 1
 }
 bg_remote=$(get_conf .remote-master "master")
 bg_cache=$(get_conf .cache-dir "~/.cache/bazel-girder")
@@ -71,11 +52,10 @@ girder_token=$(curl -L -s --data "key=${GIRDER_API_KEY}" \
 curl -L --progress-bar -H "Girder-Token: ${girder_token}" -o ${output_filepath} -O ${GIRDER_API_ROOT}/file/hashsum/sha512/${sha}/download
 
 # Test the SHA
-set -x
 sha512sum "$output_filepath"
 sha_expected="${sha} ${output_filepath}"
-set +x
-echo ${sha_expected} | sha512sum -c --status || { echo "Bad checksum. Failing."; exit 1; }
+echo ${sha_expected} | sha512sum -c --status \
+    || die "Bad checksum. Failing."
 
 # TODO(eric.cousineau): Implement simple caching: ~/.bazel-girder/sha512/{hash} - or use GIT_CONIG, bazel-girder.cache-dir
 # TODO(eric.cousineau): Make this script be Python.

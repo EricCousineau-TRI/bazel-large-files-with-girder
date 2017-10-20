@@ -2,13 +2,13 @@
 set -e -u
 
 cur_dir=$(cd $(dirname $0) && pwd)
-verbose=1
+verbose=
 
 repo_conf=${cur_dir}/girder.gitconfig
 user_conf=~/.girder.gitconfig
 
 eecho() { echo "$@" >&2; }
-debug() { [[ -n ${verbose} ]] && eecho "$@"; }
+debug() { [[ -n ${verbose} ]] && eecho "$@" || :; }
 
 get_conf() {
     key=bazel-girder${1}
