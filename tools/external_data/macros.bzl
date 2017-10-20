@@ -1,6 +1,8 @@
 ENABLE_WARN = True
 VERBOSE = True
 
+SHA_SUFFIX = ".sha512"
+
 def external_data(file, mode='normal'):
     """
     Macro for defining a large file.
@@ -28,15 +30,12 @@ def external_data(file, mode='normal'):
         native.exports_files([file])
     elif mode in ['normal', 'no_cache']:
         name = "download_{}".format(file)
-        sha_file = "{}.sha512".format(file)
+        sha_file = file + SHA_SUFFIX
         tool_name = "download"
         tool = "//tools/external_data:{}".format(tool_name)
 
         # Binary:
         cmd = "$(location {}) ".format(tool)
-        # Argument: Indicate we're in Bazel land.
-        # Since this is a build rule, our PWD will not relate to the original tool directory.
-        # cmd += "--workspace {}.runfiles/__main__ ".format(tool_name)
         # Argument: Caching.
         if mode == 'no_cache':
             cmd += "--no_cache "
@@ -70,4 +69,21 @@ def external_data_group(name, files, mode='normal'):
     native.filegroup(
         name = name,
         srcs = files,
+    )
+
+
+def external_data_group_sha(name, sha_files, mode='normal'):
+    """ Enable globbing of *.sha512 files.
+    @see external_data """
+    files = []
+    for sha_file in sha_files:
+        if not sha_file.endswith(SHA_SUFFIX)
+            fail("SHA file does end with '{}': '{}'".format(SHA_SUFFIX, sha_file))
+        file = sha_file[:-len(SHA_SUFFIX)]
+        files.append(file)
+
+    external_data_group(
+        name = name,
+        files = files,
+        mode = mode,
     )
