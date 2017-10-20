@@ -21,8 +21,9 @@ def large_file(file, mode='normal'):
         # a `*.sha512` file, and if so, (b) check the sha of the input file.
         if ENABLE_WARN:
             # TODO(eric.cousineau): Print full location of given file?
-            print("external_data: Using workspace for file '{}'".format(file))
-            print("  Please upload this file and commit the *.sha512 file.")
+            print("\nexternal_data(file = '{}', mode = 'devel'):".format(file) +
+                  "\n  Using local workspace file in development mode." +
+                  "\n  Please upload this file and commit the *.sha512 file.")
         native.exports_files([file])
     elif mode in ['normal', 'no_cache']:
         name = "download_{}".format(file)
