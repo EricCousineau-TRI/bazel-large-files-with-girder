@@ -12,13 +12,17 @@ conf_exe = os.path.join(cur_dir, 'girder', 'conf.sh')
 class _Config(object):
     def __init__(self, remote="master", do_auth=False):
         d = self.__dict__
-        # For now, disable project root stuff.
-        self.project_root = None
+
         self.remote = remote
         self.server = _get_conf('-remote.{remote}.url'.format(**d))
         self.folder_id = _get_conf('-remote.{remote}.folder-id'.format(**d))
         self.api_url = "{server}/api/v1".format(**d)
         self.cache_dir = _get_conf('.cache-dir', os.path.expanduser("~/.cache/bazel-girder"))
+
+        # For now, disable project root stuff.
+        # TODO(eric.cousineau): Figure out how to robustly determine this, especially when running
+        # `upload.py` from Bazel.
+        self.project_root = None
 
         if do_auth:
             self.api_key = _get_conf('-auth.{server}.api-key'.format(**d))
@@ -41,10 +45,6 @@ def is_sha_uploaded(conf, sha):
     # TODO(eric.cousineau): Check `folder_id` and ensure it lives in the same place?
     # This is necessary if we have users with the same file?
     # What about authentication? Optional authentication / public access?
-
-    # TODO(eric.cousineau): Check if the file has already been uploaded.
-    # @note `curl --head ${url}` will fetch the header only.
-    # TODO(eric.cousineau): Get token?
     url = "{conf.api_url}/file/hashsum/sha512/{sha}/download".format(conf=conf, sha=sha)
     first_line = subshell(
         'curl -s -H "Girder-Token: {conf.token}" --head "{url}" | head -n 1'.format(conf=conf, url=url))

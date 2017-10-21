@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 # @note This does not use `girder_client`, to minimize dependencies.
+# TODO(eric.cousineau): If `girder_client` is sufficiently lightweight, we can make this a proper Bazel
+# dependency.
 
 from __future__ import absolute_import, print_function
 import sys
@@ -9,6 +11,8 @@ import argparse
 
 # TODO(eric.cousineau): This hurts `bazel build` workflows... Need to figure out how to make this work better.
 NEED_ABSPATH = False
+
+# TODO(eric.cousineau): Make a `--quick` option to ignore checking SHA-512s, if the files are really large.
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--no_cache', action='store_true',
@@ -28,11 +32,13 @@ if NEED_ABSPATH:
         raise RuntimeError("Must specify absolute paths:\n  {}".format("\n".join(files)))
 
 # Hack to permit running from command-line easily.
-# TODO
+# TODO(eric.cousineau): Require that this is only run from Bazel.
 sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(__file__), '..')))
 from external_data import util
 
 # Get configuration.
+# TODO(eric.cousineau): Inidicate that this is read-only (pull-only) access, once we have
+# public access.
 conf = util.get_all_conf(do_auth=True)
 
 # Get the sha.
@@ -88,7 +94,7 @@ def get_download_and_cache():
             util.subshell(['ln', '-s', cache_path, args.output_file])
         else:
             util.subshell(['cp', args.output_file, cache_path])
-        # Make read-only.
+        # Make cache file read-only.
         util.subshell(['chmod', '-w', cache_path])
 
 # Check if we need to download.

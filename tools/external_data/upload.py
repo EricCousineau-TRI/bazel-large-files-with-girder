@@ -59,7 +59,7 @@ def upload(conf, filepath, do_cache):
         print("Cache path: {}".format(cache_path))
         with util.FileWriteLock(cache_path):
             subshell(['cp', filepath, cache_path])
-            # Make read-only.
+            # Make cache file read-only.
             subshell(['chmod', '-w', cache_path])
 
     print("[ Done ]")
@@ -67,12 +67,12 @@ def upload(conf, filepath, do_cache):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--do_cache', action='store_true')
+    parser.add_argument('--no_cache', action='store_true')
     parser.add_argument('filepath', type=str)
     args = parser.parse_args()
 
     conf = util.get_all_conf(do_auth=True)
-    upload(conf, args.filepath, args.do_cache)
+    upload(conf, args.filepath, not args.no_cache)
 
 
 if __name__ == '__main__':
