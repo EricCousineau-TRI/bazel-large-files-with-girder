@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 # @note This does not use `girder_client`, to minimize dependencies.
-# TODO(eric.cousineau): If `girder_client` is sufficiently lightweight, we can make this a proper Bazel
-# dependency.
+# @see util.py for more notes.
 
 from __future__ import absolute_import, print_function
 import sys

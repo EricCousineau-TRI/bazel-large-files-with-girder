@@ -5,6 +5,10 @@ import sys
 import json
 import time
 
+# TODO(eric.cousineau): If `girder_client` is sufficiently lightweight, we can make this a proper Bazel
+# dependency.
+# If it's caching mechanism is efficient and robust against Bazel, we should use that as well.
+
 cur_dir = os.path.dirname(__file__)
 
 conf_exe = os.path.join(cur_dir, 'girder', 'conf.sh')
