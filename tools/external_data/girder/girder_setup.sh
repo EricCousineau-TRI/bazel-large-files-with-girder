@@ -3,7 +3,7 @@ set -e -u
 
 cur=$(cd $(dirname ${BASH_SOURCE}) && pwd)
 
-cd ${cur}/..
+cd ${cur}/../../..
 mkdir -p build
 cd build
 # Set up virtualenv

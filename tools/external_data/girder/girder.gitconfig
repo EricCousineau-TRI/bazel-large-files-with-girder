@@ -1,3 +1,5 @@
+# Repository configuration.
+
 [bazel-girder]
     remote-master = master
 [bazel-girder-remote "master"]
