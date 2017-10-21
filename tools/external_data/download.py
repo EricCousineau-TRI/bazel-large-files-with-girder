@@ -61,6 +61,13 @@ def get_cached():
         util.eprint("SHA-512 mismatch. Removing old cached file, re-downloading.")
         # `os.remove()` will remove read-only files, reguardless.
         os.remove(cache_path)
+        if os.path.islink(args.output_file):
+            # In this situation, the cache was corrupted (somehow), and Bazel
+            # triggered a recompilation, and we still have a symlink in Bazel-space.
+            # Remove this symlink, so that we do not download into a symlink (which
+            # complicates the logic in `get_download_and_cache`). This also allows
+            # us to "reset" permissions.
+            os.remove(args.output_file)
         get_download_and_cache()
 
 def get_download():
@@ -76,20 +83,8 @@ def get_download_and_cache():
         get_download()
         # Place in cache directory.
         if args.use_cache_symlink:
-            # Hot-swap.
-            # TODO(eric.cousineau): This may fail if Bazel still has a symlink to the cache,
-            # and the cache was somehow corrupted... Not sure how to fix that.
-            # Will Bazel detect this corruption?
-            # Follow-up: Yes.
-            if os.path.islink(args.output_file):
-                # If this points to `cache_path`, then just remove the symlink.
-                # Downloading to the symlink already updated the file.
-                if os.path.realpath(args.output_file) == cache_path:
-                    os.remove(args.output_file)
-                else:
-                    raise NotImplemented()
-            else:
-                util.subshell(['mv', args.output_file, cache_path])
+            # Hot-swap the freshly downloaded file.
+            util.subshell(['mv', args.output_file, cache_path])
             util.subshell(['ln', '-s', cache_path, args.output_file])
         else:
             util.subshell(['cp', args.output_file, cache_path])
