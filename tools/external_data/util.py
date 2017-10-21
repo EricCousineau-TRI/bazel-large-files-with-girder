@@ -14,10 +14,10 @@ class _Config(object):
         d = self.__dict__
 
         self.remote = remote
-        self.server = _get_conf('-remote.{remote}.url'.format(**d))
-        self.folder_id = _get_conf('-remote.{remote}.folder-id'.format(**d))
+        self.server = _get_conf('remote.{remote}.server'.format(**d))
+        self.folder_id = _get_conf('remote.{remote}.folder-id'.format(**d))
         self.api_url = "{server}/api/v1".format(**d)
-        self.cache_dir = _get_conf('.cache-dir', os.path.expanduser("~/.cache/bazel-girder"))
+        self.cache_dir = _get_conf('core.cache-dir', os.path.expanduser("~/.cache/bazel-girder"))
 
         # For now, disable project root stuff.
         # TODO(eric.cousineau): Figure out how to robustly determine this, especially when running
@@ -25,7 +25,7 @@ class _Config(object):
         self.project_root = None
 
         if do_auth:
-            self.api_key = _get_conf('-auth.{server}.api-key'.format(**d))
+            self.api_key = _get_conf('server.{server}.api-key'.format(**d))
             token_raw = subshell("curl -L -s --data key={api_key} {api_url}/api_key/token".format(**d))
             self.token = json.loads(token_raw)["authToken"]["token"]
 

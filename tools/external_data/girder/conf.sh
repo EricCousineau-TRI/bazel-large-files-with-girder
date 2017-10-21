@@ -11,7 +11,7 @@ eecho() { echo "$@" >&2; }
 debug() { [[ -n ${verbose} ]] && eecho "$@" || :; }
 
 get_conf() {
-    key=bazel-girder${1}
+    key=${1}
     default=${2-}
     if git config -f ${repo_conf} ${key}; then
         debug "Use repo: ${repo_conf}"

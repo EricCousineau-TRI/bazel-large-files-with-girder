@@ -1,7 +1,7 @@
 # Example user configuration for private authentication bits.
 # The updated version of this file should live in ~/.girder.gitconfig.
 
-[bazel-girder]
+[core]
     cache-dir = ~/.cache/bazel-girder/
-[bazel-girder-auth "https://example-url.com"]
+[server "https://example-url.com"]
     api-key = <insert api key here>
