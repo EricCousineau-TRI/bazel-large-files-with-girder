@@ -108,22 +108,16 @@ def subshellc(cmd, strip=True):
         return None
 
 
-def run(cmd, input, strip=True):
+def runc(cmd, input):
     PIPE = subprocess.PIPE
     p = subprocess.Popen(cmd, shell=isinstance(cmd, str), stdin=PIPE, stdout=PIPE, stderr=PIPE)
     output, err = p.communicate(input)
-    if p.returncode != 0:
-        raise subprocess.CalledProcessError(p.returncode, cmd, err)
-    if strip:
-        return output.strip()
-    else:
-        return output
+    return (p.returncode, output, err)
 
-def runc(cmd, input, strip=True):
-    try:
-        return run(cmd, input, strip)
-    except subprocess.CalledProcessError as e:
-        return None
+def run(cmd, input):
+    out = run(cmd, input)
+    if out[0] != 0:
+        raise subprocess.CalledProcessError(p.returncode, cmd, err)
 
 def eprint(*args):
     print(*args, file=sys.stderr)

@@ -43,7 +43,7 @@ def external_data(file, mode='normal'):
             # Use symlinking to avoid needing to copy data to sandboxes.
             # This utility will make the file read-only, so even if a test is run
             # with `--spawn_strategy=standalone`, they should get a permission error.
-            cmd += "--use_cache_symlink"
+            cmd += "--use_cache_symlink "
         # Argument: SHA file or SHA.
         cmd += "$(location {}) ".format(sha_file)
         # Argument: Output file.

@@ -42,19 +42,26 @@ use_cache = not args.no_cache
 # Common arguments for `format`.
 d = dict(args=args, conf=conf, sha=sha)
 
-def check_sha():
+def check_sha(throw_on_error=True):
     # Test the SHA.
-    util.run("sha512sum -c --status", input="{sha} {args.output_file}".format(**d))
+    out = util.runc("sha512sum -c --status", input="{sha} {args.output_file}".format(**d))
+    if out[0] != 0 and throw_on_error:
+        raise RuntimeError("SHA-512 mismatch")
+    return out[0]
 
 def get_cached():
     # Can use cache. Copy to output path.
     print("Using cached file")
-    if args.use_symlink:
+    if args.use_cache_symlink:
         util.subshell(['ln', '-s', cache_path, args.output_file])
     else:
         util.subshell(['cp', cache_path, args.output_file])
     # TODO(eric.cousineau): On error, remove cached file, and re-download.
-    check_sha()
+    if check_sha() != 0:
+        util.eprint("SHA-512 mismatch. Removing old cached file, re-downloading.")
+        # `os.remove()` will remove read-only files, reguardless.
+        os.remove(cache_path)
+        get_download_and_cache()
 
 def get_download():
     # TODO: Pipe progress bar and file name to stderr.
@@ -68,14 +75,14 @@ def get_download_and_cache():
     with util.FileWriteLock(cache_path):
         get_download()
         # Place in cache directory.
-        if args.use_symlink:
+        if args.use_cache_symlink:
             # Hot-swap.
             util.subshell(['mv', args.output_file, cache_path])
             util.subshell(['ln', '-s', cache_path, args.output_file])
         else:
             util.subshell(['cp', args.output_file, cache_path])
         # Make read-only.
-        subshell(['chmod', '-w', cache_path])
+        util.subshell(['chmod', '-w', cache_path])
 
 # Check if we need to download.
 if use_cache:
