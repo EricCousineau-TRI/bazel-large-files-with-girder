@@ -3,6 +3,7 @@ import os
 import subprocess
 import sys
 import json
+import time
 
 cur_dir = os.path.dirname(__file__)
 
@@ -65,6 +66,33 @@ def get_sha_cache_path(conf, sha, create_dir=False):
 
 
 # --- General Utilities ---
+
+def _lock_path(filepath):
+    return filepath + ".lock"
+
+def wait_file_read_lock(filepath, timeout=60):
+    timeout = 60
+    lock = _lock_path(filepath)
+    if os.path.isfile(lock):
+        now = time.time()
+        while os.path.isfile(lock):
+            time.sleep(0.1)
+            elapsed = time.time() - now
+            if elapsed > timeout:
+                raise RuntimeError()
+
+class FileWriteLock(object):
+    def __init__(self, filepath):
+        self.lock = _lock_path(filepath)
+    def __enter__(self):
+        if os.path.isfile(self.lock):
+            raise RuntimeError("Lock already acquired? {}".format(self.lock))
+        # Touch the file.
+        with open(self.lock, 'w') as f:
+            pass
+    def __exit__(self, *args):
+        assert os.path.isfile(self.lock)
+        os.remove(self.lock)
 
 def subshell(cmd, strip=True):
     output = subprocess.check_output(cmd, shell=isinstance(cmd, str))

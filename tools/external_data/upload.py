@@ -57,7 +57,10 @@ def upload(conf, filepath, do_cache):
     if do_cache:
         cache_path = util.get_sha_cache_path(conf, sha, create_dir=True)
         print("Cache path: {}".format(cache_path))
-        subshell(['cp', filepath, cache_path])
+        with util.FileWriteLock(cache_path):
+            subshell(['cp', filepath, cache_path])
+            # Make read-only.
+            subshell(['chmod', '-w', cache_path])
 
     print("[ Done ]")
 
