@@ -12,6 +12,8 @@ import argparse
 
 from datetime import datetime
 
+assert __name__ == '__main__'
+
 sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(__file__), '..')))
 from external_data import util
 

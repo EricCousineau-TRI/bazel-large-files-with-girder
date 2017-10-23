@@ -8,6 +8,8 @@ import sys
 import os
 import argparse
 
+assert __name__ == '__main__'
+
 # TODO(eric.cousineau): This hurts `bazel build` workflows... Need to figure out how to make this work better.
 NEED_ABSPATH = False
 
@@ -18,12 +20,22 @@ parser.add_argument('--no_cache', action='store_true',
                     help='Always download, and do not cache the result.')
 parser.add_argument('--use_cache_symlink', action='store_true',
                     help='Use this if you are confident that your test will not modify the data.')
+parser.add_argument('--project_root', type=str, default='[find]',
+                    help='Specify project root. Can be [find] to find .project-root, empty for PWD, or an explicit directory.')
 parser.add_argument('sha_file', type=str,
                     help='File containing the SHA-512 of the desired contents.')
 parser.add_argument('output_file', type=str,
                     help='Output destination.')
 
 args = parser.parse_args()
+
+
+project_root = args.project_root
+if len(project_root) == 0:
+    project_root = os.getcwd()
+elif project_root == '[find]':
+    project_root = util.find_project_root(os.getcwd())
+
 
 if NEED_ABSPATH:
     files = [args.sha_file, args.output_file]

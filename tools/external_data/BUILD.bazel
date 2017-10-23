@@ -3,6 +3,7 @@ filegroup(
     srcs = [
         "girder/conf.sh",
         "girder/girder.gitconfig",
+        "//:.project-root",
     ],
 )
 
