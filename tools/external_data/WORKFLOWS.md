@@ -162,6 +162,21 @@ If you just need easy read-only access to files (and don't want to deal with Baz
     bazel run //tools/external_data:download -- --symlink_from_cache ~+/*.sha512
 
 
+## Testing experimental large files in PRs
+
+**NOT YET IMPLEMENTED**
+
+If you have a WIP pull request, and you wish to test this locally before uploading to the production server, then you can switch to a `"devel"` remote, which can use another `remote` as a back-up for downloading files that are not yet present.
+
+You can add a server such as this in the repository-level setup:
+
+    [remote "devel"]
+        server = http://localhost:XXXX/
+        folder-id = <folder id>
+        remote-overlay = master
+
+NOTE: Ensure that you update your user-level authentication bits in `~/.girder.conf`.
+
 ## TODO
 
 * Make `://tools/external_data` an actual external in Bazel, possibly something like `bazel-external-data`, such that we could do:

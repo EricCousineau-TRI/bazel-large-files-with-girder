@@ -9,6 +9,9 @@ import time
 # dependency.
 # If it's caching mechanism is efficient and robust against Bazel, we should use that as well.
 
+# TODO(eric.cousineau): For testing development files, we could have an `overlay` remote.
+# TODO(eric.cousineau): Could this be used for a mirroring / redundancy setup?
+
 cur_dir = os.path.dirname(__file__)
 
 # http://code.activestate.com/recipes/52308-the-simple-but-handy-collector-of-a-bunch-of-named/
@@ -18,16 +21,25 @@ class Bunch(dict):
         self.__dict__ = self
 
 class Config(Bunch):
-    def __init__(self, project_root, remote="master", mode='download'):
+    def __init__(self, project_root, remote=None, mode='download'):
         Bunch.__init__(self)
         self.project_root = project_root
+
         self.cache_dir = self._get_conf('core.cache-dir', os.path.expanduser("~/.cache/bazel-girder"))
 
-        self.remote = remote
+        self.project_name = self._get_conf('project.name')
+        if remote is None:
+            self.remote = self._get_conf('project.remote')
+        else:
+            self.remote = remote
+
         self.server = self._get_conf('remote.{remote}.server'.format(**self))
         self.folder_id = self._get_conf('remote.{remote}.folder-id'.format(**self))
         self.api_url = "{server}/api/v1".format(**self)
 
+        # TODO(eric.cousineau): Figure out download-only public access, but private push-only access.
+        # Most likely can use something like `api-key` for push-only access, and `api-key-download` for
+        # non-public access.
         self.api_key = None
         self.token = None
 
@@ -36,10 +48,10 @@ class Config(Bunch):
     def _get_conf(self, key, default=None):
         # TODO(eric.cousineau): 
         user_conf = os.path.expanduser("~/.girder.conf")
-        repo_conf = os.path.join(self.project_root, 'tools/external_data/girder/girder.repo.conf')
-        d = dict(repo_conf=repo_conf, user_conf=user_conf, key=key)
+        project_conf = os.path.join(self.project_root, 'tools/external_data/girder/girder.repo.conf')
+        d = dict(project_conf=project_conf, user_conf=user_conf, key=key)
 
-        value = subshellc("git config -f {repo_conf} {key}".format(**d))
+        value = subshellc("git config -f {project_conf} {key}".format(**d))
         if value is not None:
             return value
         value = subshellc("git config -f {user_conf} {key}".format(**d))
@@ -49,7 +61,7 @@ class Config(Bunch):
             return default
         else:
             raise RuntimeError(
-                "Could not resolve config: '{key}' in these files:\n  '{repo_conf}'\n  '{user_conf}'".format(**d))
+                "Could not resolve config: '{key}' in these files:\n  '{project_conf}'\n  '{user_conf}'".format(**d))
 
     def authenticate(self):
         assert self.token is None
@@ -74,6 +86,7 @@ class Config(Bunch):
 
 def is_sha_uploaded(conf, sha):
     """ Returns true if the given SHA exists on the given server. """
+    # TODO(eric.cousineau): Is there a quicker way to do this???
     # TODO(eric.cousineau): Check `folder_id` and ensure it lives in the same place?
     # This is necessary if we have users with the same file?
     # What about authentication? Optional authentication / public access?

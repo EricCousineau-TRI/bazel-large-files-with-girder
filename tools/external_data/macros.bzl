@@ -3,6 +3,11 @@ VERBOSE = False
 
 SHA_SUFFIX = ".sha512"
 
+# TODO(eric.cousineau): If this is made into a Bazel external, we can specify a different
+# `tool`.
+# Downstream projects can call these as implementation methods, so that way they can fold
+# in their own configurations / project sentinels.
+
 def external_data(file, mode='normal'):
     """
     Macro for defining a large file.
