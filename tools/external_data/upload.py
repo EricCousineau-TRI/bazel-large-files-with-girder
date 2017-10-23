@@ -4,7 +4,7 @@
 """
 
 from __future__ import absolute_import, print_function
-import girder_client
+
 import json
 import os
 import sys
@@ -45,8 +45,7 @@ def upload(conf, filepath, do_cache):
         print("versioned_filepath .: %s" % versioned_filepath)
         ref = json.dumps({'versionedFilePath': versioned_filepath})
 
-        gc = girder_client.GirderClient(apiUrl=conf.api_url)
-        gc.authenticate(apiKey=conf.api_key)
+        gc = conf.get_girder_client()
 
         size = os.stat(filepath).st_size
         with open(filepath, 'rb') as fd:
@@ -86,7 +85,8 @@ def main():
     args = parser.parse_args()
     project_root = util.parse_project_root_arg(args.project_root)
 
-    conf = util.get_all_conf(project_root, mode='upload')
+    conf = util.Config(project_root, mode='upload')
+    conf.authenticate()
     upload(conf, args.filepath, args.do_cache)
 
 

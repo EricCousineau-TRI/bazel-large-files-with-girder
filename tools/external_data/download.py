@@ -42,7 +42,7 @@ from external_data import util
 
 project_root = util.parse_project_root_arg(args.project_root)
 # Get configuration.
-conf = util.get_all_conf(project_root, mode='download')
+conf = util.Config(project_root, mode='download')
 pair = util.Bunch(output_file=args.output_file, sha_file=args.sha_file)
 
 def do_download(pair):
@@ -97,6 +97,8 @@ def do_download(pair):
             get_download_and_cache()
 
     def get_download():
+        # Defer authentication so that we can cache if necessary.
+        conf.authenticate_if_needed()
         # TODO: Pipe progress bar and file name to stderr.
         util.subshell((
             'curl -L --progress-bar -H "Girder-Token: {conf.token}" ' +

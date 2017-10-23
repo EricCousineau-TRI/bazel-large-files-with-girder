@@ -11,23 +11,29 @@ import time
 
 cur_dir = os.path.dirname(__file__)
 
-class _Config(object):
-    def __init__(self, project_root, remote="master", mode='download'):
-        d = self.__dict__
+# http://code.activestate.com/recipes/52308-the-simple-but-handy-collector-of-a-bunch-of-named/
+class Bunch(dict):
+    def __init__(self, **kw):
+        dict.__init__(self, kw)
+        self.__dict__ = self
 
+class Config(Bunch):
+    def __init__(self, project_root, remote="master", mode='download'):
+        Bunch.__init__(self)
         self.project_root = project_root
         self._conf_exe = os.path.join(self.project_root, 'tools/external_data/girder/conf.sh')
 
         self.cache_dir = self._get_conf('core.cache-dir', os.path.expanduser("~/.cache/bazel-girder"))
 
         self.remote = remote
-        self.server = self._get_conf('remote.{remote}.server'.format(**d))
-        self.folder_id = self._get_conf('remote.{remote}.folder-id'.format(**d))
-        self.api_url = "{server}/api/v1".format(**d)
+        self.server = self._get_conf('remote.{remote}.server'.format(**self))
+        self.folder_id = self._get_conf('remote.{remote}.folder-id'.format(**self))
+        self.api_url = "{server}/api/v1".format(**self)
 
-        self.api_key = self._get_conf('server.{server}.api-key'.format(**d))
-        token_raw = subshell("curl -L -s --data key={api_key} {api_url}/api_key/token".format(**d))
-        self.token = json.loads(token_raw)["authToken"]["token"]
+        self.api_key = None
+        self.token = None
+
+        self._girder_client = None
 
     def _get_conf(self, key, default=None):
         # TODO(eric.cousineau): 
@@ -36,10 +42,26 @@ class _Config(object):
             cmd.append(default)
         return subshell(cmd)
 
+    def authenticate(self):
+        assert self.token is None
+        self.api_key = self._get_conf('server.{server}.api-key'.format(**self))
+        token_raw = subshell("curl -L -s --data key={api_key} {api_url}/api_key/token".format(**self))
+        self.token = json.loads(token_raw)["authToken"]["token"]
 
-def get_all_conf(*args, **kwargs):
-    return _Config(*args, **kwargs)
+    def authenticate_if_needed(self):
+        if not self.is_authenticated():
+            self.authenticate()
 
+    def is_authenticated(self):
+        return self.token is not None
+
+    def get_girder_client(self):
+        import girder_client
+        assert self.is_authenticated()
+        if self._girder_client is None:
+            self._girder_client = girder_client.GirderClient(apiUrl=self.api_url)
+            self._girder_client.authenticate(apiKey=self.api_key)
+        return self._girder_client
 
 def is_sha_uploaded(conf, sha):
     """ Returns true if the given SHA exists on the given server. """
@@ -111,12 +133,6 @@ def wait_file_read_lock(filepath, timeout=60):
             elapsed = time.time() - now
             if elapsed > timeout:
                 raise RuntimeError()
-
-# http://code.activestate.com/recipes/52308-the-simple-but-handy-collector-of-a-bunch-of-named/
-class Bunch(dict):
-    def __init__(self, **kw):
-        dict.__init__(self, kw)
-        self.__dict__ = self
 
 class FileWriteLock(object):
     def __init__(self, filepath):
