@@ -35,6 +35,7 @@ sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(__file__), '..'
 from external_data import util
 
 project_root = util.parse_project_root_arg(args.project_root)
+util.eprint("PWD: {}".format(os.getcwd()))
 util.eprint("Project Root: {}".format(project_root))
 is_bazel = True
 

@@ -71,17 +71,21 @@ def find_project_root(start_dir):
     # However, because Bazel does symlink magic that is not easily parseable,
     # we should not rely on something like `symlink -f ${file}`, because
     # if a directory is symlink'd, then we will go to the wrong directory.
-    # Instead, we should just do one `readlink` on `.project-root`, and expect
+    # Instead, we should just do one `readlink` on the sentinel, and expect
     # that it is not a link.
-    # As an alternative, we could also use `.git`, but require that it either be
-    # a file or a directory, but NOT a symlink.
-    root_file = find_file_sentinel(start_dir, '.project-root')
+    # Alternatives:
+    #  (1) Custom `.project-root` sentinel. Fine, but useful for accurate versioning,
+    # which is the entire point of `.project-root`.
+    #  (2) `.git` - What we really want, just need to make sure Git sees this.
+    sentinel = '.git'
+    root_file = find_file_sentinel(start_dir, sentinel, file_type='dir')
     if os.path.islink(root_file):
         root_file = os.readlink(root_file)
         assert os.path.isabs(root_file)
         if os.path.islink(root_file):
-            raise RuntimeError(".project-root should only have one level of an absolute-path symlink.")
+            raise RuntimeError("Sentinel '{}' should only have one level of an absolute-path symlink.".format(sentinel))
     return os.path.dirname(root_file)
+
 
 def parse_project_root_arg(project_root_arg):
     if project_root_arg == '[find]':
@@ -121,13 +125,20 @@ class FileWriteLock(object):
         assert os.path.isfile(self.lock)
         os.remove(self.lock)
 
-def find_file_sentinel(start_dir, sentinel_file, max_depth=6):
+def find_file_sentinel(start_dir, sentinel_file, file_type='file', max_depth=6):
     cur_dir = start_dir
+    if file_type == 'file':
+        file_test = os.path.isfile
+    elif file_type == 'dir':
+        file_test = os.path.isdir
+    else:
+        raise RuntimeError("Internal error: Invalid file_type {}".format(file_type))
     assert len(cur_dir) > 0
     for i in xrange(max_depth):
+        eprint("Cur[{}]: {}".format(i, cur_dir))
         assert os.path.isdir(cur_dir)
         test_path = os.path.join(cur_dir, sentinel_file)
-        if os.path.isfile(test_path):
+        if file_test(test_path):
             return test_path
         cur_dir = os.path.dirname(cur_dir)
         if len(cur_dir) == 0:

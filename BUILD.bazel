@@ -1,3 +1,4 @@
 exports_files([
     ".project-root",
+    ".git",
 ])

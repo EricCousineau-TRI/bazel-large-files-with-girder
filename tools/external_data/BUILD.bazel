@@ -4,6 +4,7 @@ filegroup(
         "girder/conf.sh",
         "girder/girder.gitconfig",
         "//:.project-root",
+        "//:.git",
     ],
 )
 
