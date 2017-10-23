@@ -69,6 +69,32 @@ def get_sha_cache_path(conf, sha, create_dir=False):
     return os.path.join(out_dir, sha)
 
 
+def find_project_root(start_dir):
+    # Ideally, it'd be nice to just use `git rev-parse --show-top-level`.
+    # However, because Bazel does symlink magic that is not easily parseable,
+    # we should not rely on something like `symlink -f ${file}`, because
+    # if a directory is symlink'd, then we will go to the wrong directory.
+    # Instead, we should just do one `readlink` on `.project-root`, and expect
+    # that it is not a link.
+    root_file = find_file_sentinel(start_dir, '.project-root')
+    if os.path.islink(root_file):
+        root_file = os.readlink(root_file)
+        assert os.path.isabs(root_file)
+        if os.path.islink(root_file):
+            raise RuntimeError(".project-root should only have one level of an absolute-path symlink.")
+    return os.path.dirname(root_file)
+
+def parse_project_root_arg(project_root_arg):
+    if project_root_arg == '[pwd]':
+        project_root = os.getcwd()
+    elif project_root_arg == '[find]':
+        project_root = find_project_root(os.getcwd())
+    else:
+        project_root = os.path.abspath(project_root_arg)
+    assert os.path.isdir(project_root)
+    return project_root
+
+
 # --- General Utilities ---
 
 def _lock_path(filepath):
@@ -97,6 +123,20 @@ class FileWriteLock(object):
     def __exit__(self, *args):
         assert os.path.isfile(self.lock)
         os.remove(self.lock)
+
+def find_file_sentinel(start_dir, sentinel_file, max_depth=6):
+    cur_dir = start_dir
+    assert len(cur_dir) > 0
+    for i in xrange(max_depth):
+        assert os.path.isdir(cur_dir)
+        test_path = os.path.join(cur_dir, sentinel_file)
+        if os.path.isfile(test_path):
+            return test_path
+        cur_dir = os.path.dirname(cur_dir)
+        if len(cur_dir) == 0:
+            break
+    raise RuntimeError("Could not find project root")
+
 
 def subshell(cmd, strip=True):
     output = subprocess.check_output(cmd, shell=isinstance(cmd, str))

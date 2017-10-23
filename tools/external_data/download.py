@@ -21,21 +21,13 @@ parser.add_argument('--no_cache', action='store_true',
 parser.add_argument('--use_cache_symlink', action='store_true',
                     help='Use this if you are confident that your test will not modify the data.')
 parser.add_argument('--project_root', type=str, default='[find]',
-                    help='Specify project root. Can be [find] to find .project-root, empty for PWD, or an explicit directory.')
+                    help='Specify project root. Can be "[find]" to find .project-root, "[pwd"] for ${PWD}, or an explicit directory.')
 parser.add_argument('sha_file', type=str,
                     help='File containing the SHA-512 of the desired contents.')
 parser.add_argument('output_file', type=str,
                     help='Output destination.')
 
 args = parser.parse_args()
-
-
-project_root = args.project_root
-if len(project_root) == 0:
-    project_root = os.getcwd()
-elif project_root == '[find]':
-    project_root = util.find_project_root(os.getcwd())
-
 
 if NEED_ABSPATH:
     files = [args.sha_file, args.output_file]
@@ -46,6 +38,11 @@ if NEED_ABSPATH:
 # TODO(eric.cousineau): Require that this is only run from Bazel.
 sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(__file__), '..')))
 from external_data import util
+
+
+project_root = util.parse_project_root_arg(args.project_root)
+util.eprint("Pwd: {}".format(os.getcwd()))
+util.eprint("Project root: {}".format(project_root))
 
 # Get configuration.
 # TODO(eric.cousineau): Inidicate that this is read-only (pull-only) access, once we have
