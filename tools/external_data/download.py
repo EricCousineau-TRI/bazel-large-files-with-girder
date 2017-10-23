@@ -24,8 +24,8 @@ parser.add_argument('--symlink_from_cache', action='store_true',
                     help='Use a symlink from the cache rather than copying the file.')
 parser.add_argument('--project_root', type=str, default='[find]',
                     help='Project root. Can be "[find]" to find .project-root, or a relative or absolute directory.')
-parser.add_argument('--is_bazel_build', action='store_true',
-                    help='If this is invoked via `macros.bzl`s `external_data`.')
+parser.add_argument('--allow_relpath', action='store_true',
+                    help='Permit relative paths. Having this on by default makes using Bazel simpler.')
 parser.add_argument('-f', '--force', action='store_true',
                     help='Overwrite existing output file if it already exists.')
 parser.add_argument('-o', '--output', dest='output_file', type=str,
@@ -47,7 +47,7 @@ conf = util.Config(project_root, mode='download')
 SHA_SUFFIX = '.sha512'
 
 def do_download(pair):
-    if not args.is_bazel_build:
+    if not args.allow_relpath:
         # Ensure that we have absolute file paths.
         files = [pair.sha_file, pair.output_file]
         if not all(map(os.path.isabs, files)):

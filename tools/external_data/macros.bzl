@@ -37,7 +37,7 @@ def external_data(file, mode='normal'):
         # Binary:
         cmd = "$(location {}) ".format(tool)
         # Argument: Ensure that we can permit relative paths.
-        cmd += "--is_bazel_build "
+        cmd += "--allow_relpath "
         # Argument: Caching.
         if mode == 'no_cache':
             cmd += "--no_cache "
