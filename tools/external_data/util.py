@@ -112,6 +112,12 @@ def wait_file_read_lock(filepath, timeout=60):
             if elapsed > timeout:
                 raise RuntimeError()
 
+# http://code.activestate.com/recipes/52308-the-simple-but-handy-collector-of-a-bunch-of-named/
+class Bunch(dict):
+    def __init__(self, **kw):
+        dict.__init__(self, kw)
+        self.__dict__ = self
+
 class FileWriteLock(object):
     def __init__(self, filepath):
         self.lock = _lock_path(filepath)

@@ -41,90 +41,93 @@ sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(__file__), '..'
 from external_data import util
 
 project_root = util.parse_project_root_arg(args.project_root)
-
-if not args.is_bazel_build:
-    # Ensure that we have absolute file paths.
-    files = [args.sha_file, args.output_file]
-    if not all(map(os.path.isabs, files)):
-        raise RuntimeError("Must specify absolute paths:\n  {}".format("\n".join(files)))
-
 # Get configuration.
 conf = util.get_all_conf(project_root, mode='download')
+pair = util.Bunch(output_file=args.output_file, sha_file=args.sha_file)
 
-# Ensure that we do not overwrite existing files.
-if os.path.isfile(args.output_file):
-    if not args.force:
-        raise RuntimeError("Output file already exists (using `--force` to overwrite): {}".format(args.output_file))
+def do_download(pair):
+    if not args.is_bazel_build:
+        # Ensure that we have absolute file paths.
+        files = [pair.sha_file, pair.output_file]
+        if not all(map(os.path.isabs, files)):
+            raise RuntimeError("Must specify absolute paths:\n  {}".format("\n".join(files)))
 
-# Get the sha.
-if not os.path.isfile(args.sha_file):
-    util.eprint("ERROR: File not found: {}".format(args.sha_file))
-    exit(1)
-sha = util.subshell("cat {}".format(args.sha_file))
-use_cache = not args.no_cache
+    # Ensure that we do not overwrite existing files.
+    if os.path.isfile(pair.output_file):
+        if not args.force:
+            raise RuntimeError("Output file already exists (using `--force` to overwrite): {}".format(pair.output_file))
 
-# Common arguments for `format`.
-d = dict(args=args, conf=conf, sha=sha)
+    # Get the sha.
+    if not os.path.isfile(pair.sha_file):
+        util.eprint("ERROR: File not found: {}".format(pair.sha_file))
+        exit(1)
+    sha = util.subshell("cat {}".format(pair.sha_file))
+    use_cache = not args.no_cache
 
-def check_sha(throw_on_error=True):
-    # Test the SHA.
-    out = util.runc("sha512sum -c --status", input="{sha} {args.output_file}".format(**d))
-    if out[0] != 0 and throw_on_error:
-        raise RuntimeError("SHA-512 mismatch")
-    return out[0]
+    # Common arguments for `format`.
+    d = dict(conf=conf, pair=pair, sha=sha)
 
-def get_cached():
-    # Can use cache. Copy to output path.
-    print("Using cached file")
-    if args.use_cache_symlink:
-        util.subshell(['ln', '-s', cache_path, args.output_file])
-    else:
-        util.subshell(['cp', cache_path, args.output_file])
-        util.subshell(['chmod', '+w', args.output_file])
-    # TODO(eric.cousineau): On error, remove cached file, and re-download.
-    if check_sha(throw_on_error=False) != 0:
-        util.eprint("SHA-512 mismatch. Removing old cached file, re-downloading.")
-        # `os.remove()` will remove read-only files, reguardless.
-        os.remove(cache_path)
-        if os.path.islink(args.output_file):
-            # In this situation, the cache was corrupted (somehow), and Bazel
-            # triggered a recompilation, and we still have a symlink in Bazel-space.
-            # Remove this symlink, so that we do not download into a symlink (which
-            # complicates the logic in `get_download_and_cache`). This also allows
-            # us to "reset" permissions.
-            os.remove(args.output_file)
-        get_download_and_cache()
+    def check_sha(throw_on_error=True):
+        # Test the SHA.
+        out = util.runc("sha512sum -c --status", input="{sha} {pair.output_file}".format(**d))
+        if out[0] != 0 and throw_on_error:
+            raise RuntimeError("SHA-512 mismatch")
+        return out[0]
 
-def get_download():
-    # TODO: Pipe progress bar and file name to stderr.
-    util.subshell((
-        'curl -L --progress-bar -H "Girder-Token: {conf.token}" ' +
-        '-o {args.output_file} -O {conf.api_url}/file/hashsum/sha512/{sha}/download'
-    ).format(**d))
-    check_sha()
-
-def get_download_and_cache():
-    with util.FileWriteLock(cache_path):
-        get_download()
-        # Place in cache directory.
+    def get_cached():
+        # Can use cache. Copy to output path.
+        print("Using cached file")
         if args.use_cache_symlink:
-            # Hot-swap the freshly downloaded file.
-            util.subshell(['mv', args.output_file, cache_path])
-            util.subshell(['ln', '-s', cache_path, args.output_file])
+            util.subshell(['ln', '-s', cache_path, pair.output_file])
         else:
-            util.subshell(['cp', args.output_file, cache_path])
-            util.subshell(['chmod', '+w', args.output_file])
-        # Make cache file read-only.
-        util.subshell(['chmod', '-w', cache_path])
+            util.subshell(['cp', cache_path, pair.output_file])
+            util.subshell(['chmod', '+w', pair.output_file])
+        # TODO(eric.cousineau): On error, remove cached file, and re-download.
+        if check_sha(throw_on_error=False) != 0:
+            util.eprint("SHA-512 mismatch. Removing old cached file, re-downloading.")
+            # `os.remove()` will remove read-only files, reguardless.
+            os.remove(cache_path)
+            if os.path.islink(pair.output_file):
+                # In this situation, the cache was corrupted (somehow), and Bazel
+                # triggered a recompilation, and we still have a symlink in Bazel-space.
+                # Remove this symlink, so that we do not download into a symlink (which
+                # complicates the logic in `get_download_and_cache`). This also allows
+                # us to "reset" permissions.
+                os.remove(pair.output_file)
+            get_download_and_cache()
 
-# Check if we need to download.
-if use_cache:
-    cache_path = util.get_sha_cache_path(conf, sha, create_dir=True)
+    def get_download():
+        # TODO: Pipe progress bar and file name to stderr.
+        util.subshell((
+            'curl -L --progress-bar -H "Girder-Token: {conf.token}" ' +
+            '-o {pair.output_file} -O {conf.api_url}/file/hashsum/sha512/{sha}/download'
+        ).format(**d))
+        check_sha()
 
-    util.wait_file_read_lock(cache_path)
-    if os.path.isfile(cache_path):
-        get_cached()
+    def get_download_and_cache():
+        with util.FileWriteLock(cache_path):
+            get_download()
+            # Place in cache directory.
+            if args.use_cache_symlink:
+                # Hot-swap the freshly downloaded file.
+                util.subshell(['mv', pair.output_file, cache_path])
+                util.subshell(['ln', '-s', cache_path, pair.output_file])
+            else:
+                util.subshell(['cp', pair.output_file, cache_path])
+                util.subshell(['chmod', '+w', pair.output_file])
+            # Make cache file read-only.
+            util.subshell(['chmod', '-w', cache_path])
+
+    # Check if we need to download.
+    if use_cache:
+        cache_path = util.get_sha_cache_path(conf, sha, create_dir=True)
+
+        util.wait_file_read_lock(cache_path)
+        if os.path.isfile(cache_path):
+            get_cached()
+        else:
+            get_download_and_cache()
     else:
-        get_download_and_cache()
-else:
-    get_download()
+        get_download()
+
+do_download(pair)
