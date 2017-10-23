@@ -20,8 +20,8 @@ assert __name__ == '__main__'
 parser = argparse.ArgumentParser()
 parser.add_argument('--no_cache', action='store_true',
                     help='Always download, and do not cache the result.')
-parser.add_argument('--use_cache_symlink', action='store_true',
-                    help='Use this if you are confident that your test will not modify the data.')
+parser.add_argument('--symlink_from_cache', action='store_true',
+                    help='Use a symlink from the cache rather than copying the file.')
 parser.add_argument('--project_root', type=str, default='[find]',
                     help='Project root. Can be "[find]" to find .project-root, or a relative or absolute directory.')
 parser.add_argument('--is_bazel_build', action='store_true',
@@ -79,7 +79,7 @@ def do_download(pair):
     def get_cached():
         # Can use cache. Copy to output path.
         print("Using cached file")
-        if args.use_cache_symlink:
+        if args.symlink_from_cache:
             util.subshell(['ln', '-s', cache_path, pair.output_file])
         else:
             util.subshell(['cp', cache_path, pair.output_file])
@@ -112,7 +112,7 @@ def do_download(pair):
         with util.FileWriteLock(cache_path):
             get_download()
             # Place in cache directory.
-            if args.use_cache_symlink:
+            if args.symlink_from_cache:
                 # Hot-swap the freshly downloaded file.
                 util.subshell(['mv', pair.output_file, cache_path])
                 util.subshell(['ln', '-s', cache_path, pair.output_file])
