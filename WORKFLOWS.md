@@ -4,7 +4,7 @@
 
 * This is intended to work namely in Bazel. You may run this outside of Bazel, via `bazel-bin/`, but due to verbosity, it's recommended to use the Bazel command.
 * Since this is intended to run under Bazel (`download` out of necessity, `upload` for the reasons listed above), we must specify absolute paths.
-    * This can be done via the shorthand `~+` in `bash`, or via `${PWD}` or `$(pwd)`.
+    * This can be done via the shorthand `~+` in `bash`, or `${PWD}` / `$(pwd)`.
 
 ## Configuration
 
@@ -86,15 +86,15 @@ Let's say you've removed `dragon.obj` from `/data`, but a month later you wish t
 
 ## Use `*.sha512` groups in `BUILD.bazel`
 
-For groups of large data files, you could specify individual Bazel `external_data` targets, or explicitly list the files in  `external_data_group` with an explicit list of files.
+For groups of large data files, you could specify individual Bazel `external_data` targets, or explicitly list the files in  `external_data_group`.
 
-However, if you have a large set of `*.sha512` files, it may be easier to use the workspace's directory structure to glob these files; you could not use `${file}` without the suffix because this file would not exist normally, hence we can glob based on `*.sha512`.
+However, if you have a large set of `*.${ext}.sha512` files, it may be easier to use the workspace's directory structure to glob these files. (You cannot reliably use `*.${ext}` without the suffix because these files would not exist normally.)
 
 As an example in `/data`:
 
-    external_data_sha_group(
+    external_data_group(
         name = "meshes",
-        sha_files = glob(['**/*.obj.sha512']),
+        files = strip_sha(glob(['**/*.obj.sha512'])),
     )
 
 You may now use `:meshes` in tests to get all of these files.
@@ -107,37 +107,24 @@ NOTE: This interface will cache the files under `~/.cache/bazel-girder`, and thu
 
 ## Editing Files in a `*.sha512` group
 
-You may also use `mode = "devel"` in `external_data_group` or `external_data_sha_gorup` if you wish to edit *all* of the files. If you do want this, you must have downloaded all of the files to your workspace (as shown down below).
+You may also use `mode = "devel"` in `external_data_group` if you wish to edit *all* of the files. If you do want this, you must have downloaded all of the files to your workspace (as shown down below).
 
 If you want to edit a certain file in a group, then you can make two upstream targets, non-devel and devel, and link this as a `filegroup` to the original filegroup.
 
-This is handled by `external_data_sha_group(..., files_devel)` 
+Alternatively, you may use `external_data_group(..., files_devel)`, which can simplify this process:
 
-    external_data_sha_group(
+    external_data_group(
         name = "meshes_nondevel",
-        sha_files = glob(
-            include = ['**/*.obj.sha512'],
-            exclude = ['robot/to_edit.obj'],
-        ),
-    )
-    external_data(
-        name = "robot/to_edit.obj",
-        mode = "devel",
-    )
-    filegroup(
-        name = "meshes",
-        srcs = [
-            ":meshes_nondevel",
-            ":robot/to_edit.obj",
-        ],
+        files = strip_sha(glob(['**/*.obj.sha512'])),
+        files_devel = ['robot/to_edit.obj'],
     )
 
-You may make this more compact using `sha_files_devel`:
+NOTE: You can extend this to use an `*.obj` files in the workspace to assume that they are to be consumed directly:
 
-    external_data_sha_group(
-        name = "meshes",
-        sha_files = glob(['**/*.obj.sha512']),
-        sha_files_devel = "robot/to_edit.obj",
+    external_data_group(
+        name = "meshes_nondevel",
+        files = strip_sha(glob(['**/*.obj.sha512'])),
+        files_devel = glob(['**/*.obj']),
     )
 
 

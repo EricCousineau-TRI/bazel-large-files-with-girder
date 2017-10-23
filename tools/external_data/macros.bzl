@@ -70,70 +70,51 @@ def external_data(file, mode='normal'):
         fail("Invalid mode: {}".format(mode))
 
 
-def external_data_group(name, files, mode='normal'):
+def external_data_group(name, files, files_devel = [], mode='normal'):
     """ @see external_data """
+    if ENABLE_WARN and files_devel and mode == "devel":
+        print('WARNING: You are specifying `files_devel` and `mode="devel"`, which is redundant. Try choosing one.')
+
     for file in files:
-        external_data(file, mode)
+        if file not in files_devel:
+            external_data(file, mode)
+        else:
+            external_data(file, "devel")
+
+    # Consume leftover `files_devel`.
+    devel_only = []
+    for file in files_devel:
+        if file not in files:
+            devel_only.append(file)
+            external_data(file, "devel")
+    if devel_only:
+        print("\nWARNING: The following `files_devel` files are not in `files`:\n" +
+              "    {}\n".format("\n  ".join(devel_only)) +
+              "  If you remove `files_devel`, then these files will not be part of the target.\n" +
+              "  If you are using a `glob`, they may not have a corresponding *{} file\n".format(SHA_SUFFIX))
+
+    all_files = files + devel_only
     native.filegroup(
         name = name,
-        srcs = files,
+        srcs = all_files,
     )
 
 
-def external_data_sha_group(name, sha_files, files_devel = [], mode='normal'):
-    """ Enable globbing of *.sha512 files.
-    @see external_data """
-
-    if files_devel and mode == "devel":
-        print('WARNING: You are specifying `files_devel` and `mode="devel", which is redundant. Try choosing one.')
-
+def strip_sha(sha_files):
     files = []
-    files_devel_covered = []
     for sha_file in sha_files:
         if not sha_file.endswith(SHA_SUFFIX):
             fail("SHA file does end with '{}': '{}'".format(SHA_SUFFIX, sha_file))
         file = sha_file[:-len(SHA_SUFFIX)]
-        if file in files_devel:
-            files_devel_covered.append(file)
-        else:
-            files.append(file)
+        files.append(file)
+    return files
 
-    if not files_devel:
-        # Define normally.
-        external_data_group(
-            name = name,
-            files = files,
-            mode = mode,
-        )
-    else:
-        # Warn about any development files that are not a subset of `sha_files`.
-        # This way, the user knows that if they remove `files_devel`, even with `*.sha`, they will
-        # not get the same behavior.
-        not_covered = []
-        for file in files_devel:
-            if file not in files_devel_covered:
-                not_covered.append(file)
-        if not_covered:
-            print("\nWARNING: The following files do not have a corresponding `*{}` file in `sha_files`:\n  {}".format(
-                SHA_SUFFIX, "\n  ".join(not_covered)))
 
-        # Define non-devel group.
-        external_data_group(
-            name = name + "_nondevel",
-            files = files,
-            mode = mode,
-        )
-        # Define devel group.
-        external_data_group(
-            name = name + "_devel",
-            files = files_devel,
-            mode = "devel",
-        )
-        # Define same group.
-        native.filegroup(
-            name = name,
-            srcs = [
-                name + "_nondevel",
-                name + "_devel",
-            ],
-        )
+# def external_data_sha_group(name, sha_files, **kwargs):
+#     """ Enable globbing of *.sha512 files.
+#     @see external_data """
+#     external_data_group(
+#         name = name,
+#         files = strip_sha(sha_files),
+#         **kwargs
+#     )

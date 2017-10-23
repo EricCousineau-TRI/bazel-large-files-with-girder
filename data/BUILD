@@ -1,4 +1,7 @@
-load("//tools/external_data:macros.bzl", "external_data", "external_data_sha_group")
+load("//tools/external_data:macros.bzl",
+    "external_data",
+    "external_data_group",
+    "strip_sha")
 
 #
 # Larger file associated with a key file and available
@@ -12,13 +15,13 @@ external_data(
     # mode = 'devel',
 )
 
-external_data_sha_group(
+external_data_group(
     name = "extra",
-    sha_files = glob(['extra*.sha512']),
+    files = strip_sha(glob(['extra*.obj.sha512'])),
     files_devel = glob(["extra*.obj"]),
 )
 
-# external_data_sha_group(
+# external_data(
 #     name = "extra_nondevel",
 #     sha_files = glob(
 #         include = ['extra*.obj.sha512'],
