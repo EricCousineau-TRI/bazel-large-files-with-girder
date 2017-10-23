@@ -18,8 +18,13 @@ assert __name__ == '__main__'
 sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(__file__), '..')))
 from external_data import util
 
+SHA_SUFFIX = '.sha512'
+
 def upload(conf, filepath, do_cache):
     filepath = os.path.abspath(filepath)
+    if filepath.endswith(SHA_SUFFIX):
+        filepath_guess = filepath[:-len(SHA_SUFFIX)]
+        raise RuntimeError("Input file is a SHA file. Did you mean to upload '{}' instead?".format(filepath_guess))
     item_name = "%s %s" % (os.path.basename(filepath), datetime.utcnow().isoformat())
 
     sha = util.subshell(['sha512sum', filepath]).split(' ')[0]
@@ -35,7 +40,7 @@ def upload(conf, filepath, do_cache):
             # TODO: Assert that this file is contained under project_root.
             versioned_filepath = os.path.relpath(filepath, conf.project_root)
             if versioned_filepath.startswith('..'):
-                raise RuntimeError("File to upload ({}) must be under: {}".format(filepath, conf.project_root))
+                raise RuntimeError("File to upload, '{}', must be under '{}'".format(filepath, conf.project_root))
             print("project_root .......: %s" % conf.project_root)
             print("versioned_filepath .: %s" % versioned_filepath)
             ref = json.dumps({'versionedFilePath': versioned_filepath})
@@ -53,7 +58,7 @@ def upload(conf, filepath, do_cache):
         print("File already uploaded")
 
     # Write SHA512
-    sha_file = filepath + '.sha512'
+    sha_file = filepath + SHA_SUFFIX
     with open(sha_file, 'w') as fd:
         print("Updating sha file: {}".format(sha_file))
         fd.write(sha)
