@@ -15,6 +15,8 @@ assert __name__ == '__main__'
 # TODO(eric.cousineau): Allow this to handle multiple files to download. Add a `--batch` argument, that will infer
 # the output paths.
 
+# TODO(eric.cousineau): Ensure that we do not need immediate authentication in configuration, e.g. when in road warrior mode.
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--no_cache', action='store_true',
                     help='Always download, and do not cache the result.')
@@ -24,6 +26,8 @@ parser.add_argument('--project_root', type=str, default='[find]',
                     help='Project root. Can be "[find]" to find .project-root, or a relative or absolute directory.')
 parser.add_argument('--is_bazel_build', action='store_true',
                     help='If this is invoked via `macros.bzl`s `external_data`.')
+parser.add_argument('-f,--force', action='store_true',
+                    help='Overwrite existing output file if it already exists.')
 parser.add_argument('sha_file', type=str,
                     help='File containing the SHA-512 of the desired contents.')
 parser.add_argument('output_file', type=str,
@@ -46,6 +50,11 @@ if not args.is_bazel_build:
 
 # Get configuration.
 conf = util.get_all_conf(project_root, mode='download')
+
+# Ensure that we do not overwrite existing files.
+if os.path.isfile(args.output_file):
+    if not args.force:
+        raise RuntimeError("Output file already exists (using `--force` to overwrite): {}".format(args.output_file))
 
 # Get the sha.
 if not os.path.isfile(args.sha_file):
