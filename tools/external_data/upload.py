@@ -5,6 +5,7 @@
 
 from __future__ import absolute_import, print_function
 import girder_client
+import json
 import os
 import sys
 import textwrap
@@ -31,8 +32,11 @@ def upload(conf, filepath, do_cache):
         print("item_name ..........: %s" % item_name)
 
         if conf.project_root:
+            # TODO: Assert that this file is contained under project_root.
             versioned_filepath = os.path.relpath(filepath, conf.project_root)
-            print("project_root .......: %s" % project_root)
+            if versioned_filepath.startswith('..'):
+                raise RuntimeError("File to upload ({}) must be under: {}".format(filepath, conf.project_root))
+            print("project_root .......: %s" % conf.project_root)
             print("versioned_filepath .: %s" % versioned_filepath)
             ref = json.dumps({'versionedFilePath': versioned_filepath})
         else:
