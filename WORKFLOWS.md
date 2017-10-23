@@ -109,15 +109,12 @@ You may also use `mode = "devel"` if you wish to edit *all* of them. You *must* 
 
 If you only wish to edit one file in a glob'd group, consider a structure like:
 
-TODO: Need to confirm.
-
     external_data_sha_group(
         name = "meshes_nondevel",
-        sha_files = glob([
-                '**/*.obj.sha512',
-            ],
-                exclude = ['robot/to_edit.obj'],
-            ),
+        sha_files = glob(
+            include = ['**/*.obj.sha512'],
+            exclude = ['robot/to_edit.obj'],
+        ),
     )
     external_data(
         name = "robot/to_edit.obj",
@@ -125,7 +122,7 @@ TODO: Need to confirm.
     )
     filegroup(
         name = "meshes",
-        data = [
+        srcs = [
             ":meshes_nondevel",
             ":robot/to_edit.obj",
         ],

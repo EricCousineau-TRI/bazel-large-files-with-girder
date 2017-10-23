@@ -12,7 +12,26 @@ external_data(
     # mode = 'devel',
 )
 
+# external_data_sha_group(
+#     name = "extra",
+#     sha_files = glob(['extra*.sha512']),
+# )
+
 external_data_sha_group(
+    name = "extra_nondevel",
+    sha_files = glob(
+        include = ['extra*.obj.sha512'],
+        exclude = ['extra2.obj.sha512'],
+    ),
+)
+external_data(
+    file = "extra2.sha512",
+    mode = "devel",
+)
+filegroup(
     name = "extra",
-    sha_files = glob(['extra*.sha512']),
+    srcs = [
+        ":extra_nondevel",
+        ":extra2.obj",
+    ],
 )
