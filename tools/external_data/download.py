@@ -55,7 +55,9 @@ def do_download(pair):
 
     # Ensure that we do not overwrite existing files.
     if os.path.isfile(pair.output_file):
-        if not args.force:
+        if args.force:
+            os.remove(pair.output_file)
+        else:
             raise RuntimeError("Output file already exists (use `--force` to overwrite): {}".format(pair.output_file))
 
     # Get the sha.
@@ -76,9 +78,8 @@ def do_download(pair):
             raise RuntimeError("SHA-512 mismatch")
         return out[0]
 
-    def get_cached():
+    def get_cached(skip_sha=False):
         # Can use cache. Copy to output path.
-        print("Using cached file")
         if args.symlink_from_cache:
             util.subshell(['ln', '-s', cache_path, pair.output_file])
         else:
@@ -98,29 +99,23 @@ def do_download(pair):
                 os.remove(pair.output_file)
             get_download_and_cache()
 
-    def get_download():
-        # Defer authentication so that we can cache if necessary.
+    def get_download(output_file):
+        # Defer authentication so that we can use only the cache if necessary.
         conf.authenticate_if_needed()
         # TODO: Pipe progress bar and file name to stderr.
         util.subshell((
             'curl -L --progress-bar -H "Girder-Token: {conf.token}" ' +
-            '-o {pair.output_file} -O {conf.api_url}/file/hashsum/sha512/{sha}/download'
-        ).format(**d))
+            '-o {output_file} -O {conf.api_url}/file/hashsum/sha512/{sha}/download'
+        ).format(output_file=output_file, **d))
         check_sha()
 
     def get_download_and_cache():
         with util.FileWriteLock(cache_path):
-            get_download()
-            # Place in cache directory.
-            if args.symlink_from_cache:
-                # Hot-swap the freshly downloaded file.
-                util.subshell(['mv', pair.output_file, cache_path])
-                util.subshell(['ln', '-s', cache_path, pair.output_file])
-            else:
-                util.subshell(['cp', pair.output_file, cache_path])
-                util.subshell(['chmod', '+w', pair.output_file])
+            get_download(cache_path)
             # Make cache file read-only.
             util.subshell(['chmod', '-w', cache_path])
+        # Use cached file - `get_download()` has already checked the sha.
+        get_cached(skip_sha=True)
 
     # Check if we need to download.
     if use_cache:
@@ -128,11 +123,12 @@ def do_download(pair):
 
         util.wait_file_read_lock(cache_path)
         if os.path.isfile(cache_path):
+            print("Using cached file")
             get_cached()
         else:
             get_download_and_cache()
     else:
-        get_download()
+        get_download(pair.output_file)
 
 
 if args.output_file:
