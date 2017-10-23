@@ -80,18 +80,52 @@ def external_data_group(name, files, mode='normal'):
     )
 
 
-def external_data_sha_group(name, sha_files, mode='normal'):
+def external_data_sha_group(name, sha_files, sha_files_devel = [], mode='normal'):
     """ Enable globbing of *.sha512 files.
     @see external_data """
     files = []
+    files_devel = []
+    sha_files_devel_consumed = []
     for sha_file in sha_files:
         if not sha_file.endswith(SHA_SUFFIX):
             fail("SHA file does end with '{}': '{}'".format(SHA_SUFFIX, sha_file))
         file = sha_file[:-len(SHA_SUFFIX)]
-        files.append(file)
+        if sha_file in sha_files_devel:
+            files_devel.append(file)
+            sha_files_devel_consumed.append(sha_file)
+        else:
+            files.append(file)
 
-    external_data_group(
-        name = name,
-        files = files,
-        mode = mode,
-    )
+    if mode == 'devel' or not files_devel:
+        # Define normally.
+        external_data_group(
+            name = name,
+            files = files,
+            mode = mode,
+        )
+    else:
+        # Ensure that `sha_files_devel` is a subset of `sha_files`
+        for sha_file in sha_files_devel:
+            if sha_file not in sha_files_devel_consumed:
+                fail("Devel sha file is NOT a subset of `sha_files`: {}".format(sha_file))
+
+        # Define non-devel group.
+        external_data_group(
+            name = name + "_nondevel",
+            files = files,
+            mode = mode,
+        )
+        # Define devel group.
+        external_data_group(
+            name = name + "_devel",
+            files = files_devel,
+            mode = "devel",
+        )
+        # Define same group.
+        native.filegroup(
+            name = name,
+            srcs = [
+                name + "_nondevel",
+                name + "_devel",
+            ],
+        )
