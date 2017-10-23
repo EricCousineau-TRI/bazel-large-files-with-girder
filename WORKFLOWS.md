@@ -107,9 +107,11 @@ NOTE: This interface will cache the files under `~/.cache/bazel-girder`, and thu
 
 ## Editing Files in a `*.sha512` group
 
-You may also use `mode = "devel"` in `external_data_group` or `exteranl_data_sha_gorup` if you wish to edit *all* of the files. If you do wnat this, you must have downloaded all of the files to your workspace (as shown down below).
+You may also use `mode = "devel"` in `external_data_group` or `external_data_sha_gorup` if you wish to edit *all* of the files. If you do want this, you must have downloaded all of the files to your workspace (as shown down below).
 
-If you only want one file, consider the structure mentioned below:
+If you want to edit a certain file in a group, then you can make two upstream targets, non-devel and devel, and link this as a `filegroup` to the original filegroup.
+
+This is handled by `external_data_sha_group(..., files_devel)` 
 
     external_data_sha_group(
         name = "meshes_nondevel",
