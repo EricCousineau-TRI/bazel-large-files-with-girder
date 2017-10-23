@@ -10,10 +10,10 @@ import argparse
 
 assert __name__ == '__main__'
 
-# TODO(eric.cousineau): This hurts `bazel build` workflows... Need to figure out how to make this work better.
-NEED_ABSPATH = False
-
 # TODO(eric.cousineau): Make a `--quick` option to ignore checking SHA-512s, if the files are really large.
+
+# TODO(eric.cousineau): Allow this to handle multiple files to download. Add a `--batch` argument, that will infer
+# the output paths.
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--no_cache', action='store_true',
@@ -37,20 +37,14 @@ sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(__file__), '..'
 from external_data import util
 
 project_root = util.parse_project_root_arg(args.project_root)
-util.eprint("PWD: {}".format(os.getcwd()))
-util.eprint("Project Root: {}".format(project_root))
 
-direct_execd = not os.getcwd().endswith('/__main__')
-allow_relative_paths = args.is_bazel_build or direct_execd
-if not allow_relative_paths:
+if not args.is_bazel_build:
     # Ensure that we have absolute file paths.
     files = [args.sha_file, args.output_file]
     if not all(map(os.path.isabs, files)):
         raise RuntimeError("Must specify absolute paths:\n  {}".format("\n".join(files)))
 
 # Get configuration.
-# TODO(eric.cousineau): Inidicate that this is read-only (pull-only) access, once we have
-# public access.
 conf = util.get_all_conf(project_root, mode='download')
 
 # Get the sha.

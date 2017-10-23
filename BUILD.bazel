@@ -1,4 +1,5 @@
+# Allow us to see the original Git repository so that we can accurately
+# determine the project root for server-side versioning.
 exports_files([
-    ".project-root",
     ".git",
 ])

@@ -135,7 +135,6 @@ def find_file_sentinel(start_dir, sentinel_file, file_type='file', max_depth=6):
         raise RuntimeError("Internal error: Invalid file_type {}".format(file_type))
     assert len(cur_dir) > 0
     for i in xrange(max_depth):
-        eprint("Cur[{}]: {}".format(i, cur_dir))
         assert os.path.isdir(cur_dir)
         test_path = os.path.join(cur_dir, sentinel_file)
         if file_test(test_path):
