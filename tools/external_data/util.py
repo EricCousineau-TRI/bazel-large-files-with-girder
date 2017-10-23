@@ -35,8 +35,8 @@ class Config(Bunch):
 
     def _get_conf(self, key, default=None):
         # TODO(eric.cousineau): 
-        user_conf = os.path.expanduser("~/.girder.gitconfig")
-        repo_conf = os.path.join(self.project_root, 'tools/external_data/girder/girder.gitconfig')
+        user_conf = os.path.expanduser("~/.girder.conf")
+        repo_conf = os.path.join(self.project_root, 'tools/external_data/girder/girder.repo.conf')
         d = dict(repo_conf=repo_conf, user_conf=user_conf, key=key)
 
         value = subshellc("git config -f {repo_conf} {key}".format(**d))

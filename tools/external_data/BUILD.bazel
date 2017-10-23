@@ -1,7 +1,7 @@
 filegroup(
-    name = "girder_config",
+    name = "config",
     srcs = [
-        "girder/girder.gitconfig",
+        "girder/girder.repo.conf",
         "//:.git",
     ],
 )
@@ -9,7 +9,7 @@ filegroup(
 py_library(
     name = "util",
     srcs = ["util.py"],
-    data = [":girder_config"],
+    data = [":config"],
     # imports = [".."],
 )
 

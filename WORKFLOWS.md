@@ -8,8 +8,8 @@
 
 ## Configuration
 
-* Inspect the configuration in `tools/external_data/girder.gitconfig`. This is for the repository.
-* Inspect `tools/external_data/girder.gitconfig.user.tpl`. This is a template, which should live in `~/.girder.gitconfig`. Ensure you add the appropriate API key so that you have authorized access.
+* Inspect the configuration in `tools/external_data/girder.repo.conf`. This is for the repository.
+* Inspect `.../girder.user.conf`. This is a template, which should live in `~/.girder.conf`. Ensure you add the appropriate API key so that you have authorized access.
 
 ## Start Drafting a Large File
 
