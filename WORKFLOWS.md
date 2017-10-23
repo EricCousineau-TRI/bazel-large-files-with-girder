@@ -105,8 +105,6 @@ NOTE: This interface will cache the files under `~/.cache/bazel-girder`, and thu
 
 ## Download a Set of Files
 
-NOT YET IMPLEMENTED
-
 If you wish to download *all* files of a given extension at the specified revision under a certain directory, you may use `find` (and ensure that you use `~+` so that it returns absolute paths):
 
     find ~+ -name '*.obj.sha512' | xargs bazel run //tools/external_data:download --
@@ -116,8 +114,6 @@ For each `${file}.sha512` that is found, the file will be downloaded to `${file}
 As above, these files are cached.
 
 ## Download One File to a Specific Location
-
-NOT YET IMPLEMENTED
 
 This is used in Bazel via `macros.bzl`:
 

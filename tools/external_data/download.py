@@ -26,12 +26,12 @@ parser.add_argument('--project_root', type=str, default='[find]',
                     help='Project root. Can be "[find]" to find .project-root, or a relative or absolute directory.')
 parser.add_argument('--is_bazel_build', action='store_true',
                     help='If this is invoked via `macros.bzl`s `external_data`.')
-parser.add_argument('-f,--force', action='store_true',
+parser.add_argument('-f', '--force', action='store_true',
                     help='Overwrite existing output file if it already exists.')
-parser.add_argument('sha_file', type=str,
-                    help='File containing the SHA-512 of the desired contents.')
-parser.add_argument('output_file', type=str,
-                    help='Output destination.')
+parser.add_argument('-o', '--output', dest='output_file', type=str,
+                    help='Output destination. If specified, only one input file may be provided.')
+parser.add_argument('sha_files', type=str, nargs='+',
+                    help='Files containing the SHA-512 of the desired contents. If --output is not provided, the output destination is inferred from the input path.')
 
 args = parser.parse_args()
 
@@ -43,7 +43,8 @@ from external_data import util
 project_root = util.parse_project_root_arg(args.project_root)
 # Get configuration.
 conf = util.Config(project_root, mode='download')
-pair = util.Bunch(output_file=args.output_file, sha_file=args.sha_file)
+
+SHA_SUFFIX = '.sha512'
 
 def do_download(pair):
     if not args.is_bazel_build:
@@ -55,12 +56,13 @@ def do_download(pair):
     # Ensure that we do not overwrite existing files.
     if os.path.isfile(pair.output_file):
         if not args.force:
-            raise RuntimeError("Output file already exists (using `--force` to overwrite): {}".format(pair.output_file))
+            raise RuntimeError("Output file already exists (use `--force` to overwrite): {}".format(pair.output_file))
 
     # Get the sha.
     if not os.path.isfile(pair.sha_file):
-        util.eprint("ERROR: File not found: {}".format(pair.sha_file))
-        exit(1)
+        raise RuntimeError("ERROR: File not found: {}".format(pair.sha_file))
+    if not pair.sha_file.endswith(SHA_SUFFIX):
+        raise RuntimeError("ERROR: File does not end with '{}': '{}'".format(SHA_SUFFIX, pair.sha_file))
     sha = util.subshell("cat {}".format(pair.sha_file))
     use_cache = not args.no_cache
 
@@ -132,4 +134,14 @@ def do_download(pair):
     else:
         get_download()
 
-do_download(pair)
+
+if args.output_file:
+    if len(args.sha_files) != 1:
+        raise RuntimeError("Can only specify one input file with --output")
+    pair = util.Bunch(output_file=args.output_file, sha_file=args.sha_files[0])
+    do_download(pair)
+else:
+    for sha_file in args.sha_files:
+        output_file = sha_file[:-len(SHA_SUFFIX)]
+        pair = util.Bunch(output_file=output_file, sha_file=sha_file)
+        do_download(pair)

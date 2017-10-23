@@ -49,7 +49,7 @@ def external_data(file, mode='normal'):
         # Argument: SHA file or SHA.
         cmd += "$(location {}) ".format(sha_file)
         # Argument: Output file.
-        cmd += " $@"
+        cmd += "--output $@ "
 
         if VERBOSE:
             print("\nexternal_data(file = '{}', mode = '{}'):".format(file, mode) +
