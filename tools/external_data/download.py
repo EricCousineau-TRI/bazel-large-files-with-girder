@@ -50,6 +50,9 @@ util.eprint("Project root: {}".format(project_root))
 conf = util.get_all_conf(do_auth=True)
 
 # Get the sha.
+if not os.path.isfile(args.sha_file):
+    util.eprint("ERROR: File not found: {}".format(args.sha_file))
+    exit(1)
 sha = util.subshell("cat {}".format(args.sha_file))
 use_cache = not args.no_cache
 
@@ -70,6 +73,7 @@ def get_cached():
         util.subshell(['ln', '-s', cache_path, args.output_file])
     else:
         util.subshell(['cp', cache_path, args.output_file])
+        util.subshell(['chmod', '+w', args.output_file])
     # TODO(eric.cousineau): On error, remove cached file, and re-download.
     if check_sha(throw_on_error=False) != 0:
         util.eprint("SHA-512 mismatch. Removing old cached file, re-downloading.")
@@ -102,6 +106,7 @@ def get_download_and_cache():
             util.subshell(['ln', '-s', cache_path, args.output_file])
         else:
             util.subshell(['cp', args.output_file, cache_path])
+            util.subshell(['chmod', '+w', args.output_file])
         # Make cache file read-only.
         util.subshell(['chmod', '-w', cache_path])
 
