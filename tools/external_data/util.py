@@ -11,37 +11,34 @@ import time
 
 cur_dir = os.path.dirname(__file__)
 
-conf_exe = os.path.join(cur_dir, 'girder', 'conf.sh')
-
 class _Config(object):
-    def __init__(self, remote="master", do_auth=False):
+    def __init__(self, project_root, remote="master", mode='download'):
         d = self.__dict__
 
+        self.project_root = project_root
+        self._conf_exe = os.path.join(self.project_root, 'tools/external_data/girder/conf.sh')
+
+        self.cache_dir = self._get_conf('core.cache-dir', os.path.expanduser("~/.cache/bazel-girder"))
+
         self.remote = remote
-        self.server = _get_conf('remote.{remote}.server'.format(**d))
-        self.folder_id = _get_conf('remote.{remote}.folder-id'.format(**d))
+        self.server = self._get_conf('remote.{remote}.server'.format(**d))
+        self.folder_id = self._get_conf('remote.{remote}.folder-id'.format(**d))
         self.api_url = "{server}/api/v1".format(**d)
-        self.cache_dir = _get_conf('core.cache-dir', os.path.expanduser("~/.cache/bazel-girder"))
 
-        # For now, disable project root stuff.
-        # TODO(eric.cousineau): Figure out how to robustly determine this, especially when running
-        # `upload.py` from Bazel.
-        self.project_root = None
+        self.api_key = self._get_conf('server.{server}.api-key'.format(**d))
+        token_raw = subshell("curl -L -s --data key={api_key} {api_url}/api_key/token".format(**d))
+        self.token = json.loads(token_raw)["authToken"]["token"]
 
-        if do_auth:
-            self.api_key = _get_conf('server.{server}.api-key'.format(**d))
-            token_raw = subshell("curl -L -s --data key={api_key} {api_url}/api_key/token".format(**d))
-            self.token = json.loads(token_raw)["authToken"]["token"]
+    def _get_conf(self, key, default=None):
+        # TODO(eric.cousineau): 
+        cmd = [self._conf_exe, key]
+        if default:
+            cmd.append(default)
+        return subshell(cmd)
 
 
-def get_all_conf(**kwargs):
-    return _Config(**kwargs)
-
-def _get_conf(key, default=None):
-    cmd = [conf_exe, key]
-    if default:
-        cmd.append(default)
-    return subshell(cmd)
+def get_all_conf(*args, **kwargs):
+    return _Config(*args, **kwargs)
 
 
 def is_sha_uploaded(conf, sha):
@@ -76,6 +73,8 @@ def find_project_root(start_dir):
     # if a directory is symlink'd, then we will go to the wrong directory.
     # Instead, we should just do one `readlink` on `.project-root`, and expect
     # that it is not a link.
+    # As an alternative, we could also use `.git`, but require that it either be
+    # a file or a directory, but NOT a symlink.
     root_file = find_file_sentinel(start_dir, '.project-root')
     if os.path.islink(root_file):
         root_file = os.readlink(root_file)
@@ -85,9 +84,7 @@ def find_project_root(start_dir):
     return os.path.dirname(root_file)
 
 def parse_project_root_arg(project_root_arg):
-    if project_root_arg == '[pwd]':
-        project_root = os.getcwd()
-    elif project_root_arg == '[find]':
+    if project_root_arg == '[find]':
         project_root = find_project_root(os.getcwd())
     else:
         project_root = os.path.abspath(project_root_arg)

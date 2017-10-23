@@ -21,7 +21,7 @@ parser.add_argument('--no_cache', action='store_true',
 parser.add_argument('--use_cache_symlink', action='store_true',
                     help='Use this if you are confident that your test will not modify the data.')
 parser.add_argument('--project_root', type=str, default='[find]',
-                    help='Specify project root. Can be "[find]" to find .project-root, "[pwd"] for ${PWD}, or an explicit directory.')
+                        help='Project root. Can be "[find]" to find .project-root, or a relative or absolute directory.')
 parser.add_argument('sha_file', type=str,
                     help='File containing the SHA-512 of the desired contents.')
 parser.add_argument('output_file', type=str,
@@ -29,25 +29,25 @@ parser.add_argument('output_file', type=str,
 
 args = parser.parse_args()
 
-if NEED_ABSPATH:
-    files = [args.sha_file, args.output_file]
-    if not all(map(os.path.isabs, files)):
-        raise RuntimeError("Must specify absolute paths:\n  {}".format("\n".join(files)))
-
 # Hack to permit running from command-line easily.
 # TODO(eric.cousineau): Require that this is only run from Bazel.
 sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(__file__), '..')))
 from external_data import util
 
-
 project_root = util.parse_project_root_arg(args.project_root)
-util.eprint("Pwd: {}".format(os.getcwd()))
-util.eprint("Project root: {}".format(project_root))
+util.eprint("Project Root: {}".format(project_root))
+is_bazel = True
+
+if not is_bazel:
+    # Ensure that we have absolute file paths.
+    files = [args.sha_file, args.output_file]
+    if not all(map(os.path.isabs, files)):
+        raise RuntimeError("Must specify absolute paths:\n  {}".format("\n".join(files)))
 
 # Get configuration.
 # TODO(eric.cousineau): Inidicate that this is read-only (pull-only) access, once we have
 # public access.
-conf = util.get_all_conf(do_auth=True)
+conf = util.get_all_conf(project_root, mode='download')
 
 # Get the sha.
 if not os.path.isfile(args.sha_file):

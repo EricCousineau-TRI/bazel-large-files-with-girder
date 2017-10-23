@@ -17,7 +17,6 @@ assert __name__ == '__main__'
 sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(__file__), '..')))
 from external_data import util
 
-
 def upload(conf, filepath, do_cache):
     filepath = os.path.abspath(filepath)
     item_name = "%s %s" % (os.path.basename(filepath), datetime.utcnow().isoformat())
@@ -73,10 +72,13 @@ def upload(conf, filepath, do_cache):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--do_cache', action='store_true')
+    parser.add_argument('--project_root', type=str, default='[find]',
+                        help='Project root. Can be "[find]" to find .project-root, or a relative or absolute directory.')
     parser.add_argument('filepath', type=str)
     args = parser.parse_args()
+    project_root = util.parse_project_root_arg(args.project_root)
 
-    conf = util.get_all_conf(do_auth=True)
+    conf = util.get_all_conf(project_root, mode='upload')
     upload(conf, args.filepath, args.do_cache)
 
 
