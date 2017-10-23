@@ -43,6 +43,7 @@ def upload(conf, filepath, do_cache):
         print("item_name ..........: %s" % item_name)
         print("project_root .......: %s" % conf.project_root)
         print("versioned_filepath .: %s" % versioned_filepath)
+        # TODO(eric.cousineau): Include `conf.project_name` in the versioning.
         ref = json.dumps({'versionedFilePath': versioned_filepath})
 
         gc = conf.get_girder_client()
