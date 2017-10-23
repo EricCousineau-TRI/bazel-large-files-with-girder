@@ -16,7 +16,7 @@
 Say you're in `/data`, and want to author `dragon.obj` to be used in a Bazel
 test.
 
-1. Add a Bazel target for this file indicating that it's external data and that you're in the process of developing the file. In `data/BUILD.bazel`:
+1. Add a Bazel target for this file indicating that it's external data and that you're in the process of developing the file. In `/data/BUILD.bazel`:
 
         external_data(
             file = "dragon.obj",
@@ -84,7 +84,7 @@ Let's say you've removed `dragon.obj` from `/data`, but a month later you wish t
 
 4. Follow the steps in "Upload the File for Deployment".
 
-## Use `*.sha512` globs in `BUILD.bazel`
+## Use `*.sha512` groups in `BUILD.bazel`
 
 If you have a set of `*.sha512` files that you do not want to specify individual Bazel `external_data` targets for, you may use `external_data_sha_group`. As an example in `/data`:
 
@@ -95,7 +95,7 @@ If you have a set of `*.sha512` files that you do not want to specify individual
         ]),
     )
 
-You may now use `:meshes` in tests to get all of these files. Note that you may also use `mode = "devel"` if you wish to edit *all* of them. You *must* have these files present in your workspace; to make this happen, so below.
+You may now use `:meshes` in tests to get all of these files.
 
 If you wish to expose all of these files within the Bazel build sandbox, you may execute:
 
@@ -103,13 +103,43 @@ If you wish to expose all of these files within the Bazel build sandbox, you may
 
 NOTE: This interface will cache the files under `~/.cache/bazel-girder`, and thus you will not need to re-download these files.
 
+## Editing Files in a `*.sha512` group
+
+You may also use `mode = "devel"` if you wish to edit *all* of them. You *must* have these files present in your workspace; to make this happen, so below.
+
+If you only wish to edit one file in a glob'd group, consider a structure like:
+
+TODO: Need to confirm.
+
+    external_data_sha_group(
+        name = "meshes_nondevel",
+        sha_files = glob([
+                '**/*.obj.sha512',
+            ],
+                exclude = ['robot/to_edit.obj'],
+            ),
+    )
+    external_data(
+        name = "robot/to_edit.obj",
+        mode = "devel",
+    )
+    filegroup(
+        name = "meshes",
+        data = [
+            ":meshes_nondevel",
+            ":robot/to_edit.obj",
+        ],
+    )
+
 ## Download a Set of Files
 
 If you wish to download *all* files of a given extension at the specified revision under a certain directory, you may use `find` (and ensure that you use `~+` so that it returns absolute paths):
 
     find ~+ -name '*.obj.sha512' | xargs bazel run //tools/external_data:download --
 
-For each `${file}.sha512` that is found, the file will be downloaded to `${file}`. Note that this will fail if one of the outputs already exists.
+For each `${file}.sha512` that is found, the file will be downloaded to `${file}`.
+
+NOTE: This will fail if one of the outputs already exists; you must specify `--force` to enable overwriting.
 
 As above, these files are cached.
 
@@ -118,6 +148,12 @@ As above, these files are cached.
 This is used in Bazel via `macros.bzl`:
 
     bazel run //tools/external_data:download -- ${file}.sha512 --output ${file}
+
+## Download a File but Do Not Copy
+
+If you just need easy read-only access to a file (and don't want to deal with Bazel's paths), you can use `--symlink_from_cache`:
+
+    bazel run //tools/external_data:download -- --symlink_from_cache ~+/*.sha512
 
 ## TODO
 
