@@ -36,8 +36,8 @@ def external_data(file, mode='normal'):
 
         # Binary:
         cmd = "$(location {}) ".format(tool)
-        # TODO(eric.cousineau): If we need access to Git, use `--project_root` for downloading.
-        # (e.g. if using the `cat-file` workaround for `git-annex`.)
+        # Argument: Ensure that we can permit relative paths.
+        cmd += "--is_bazel_build "
         # Argument: Caching.
         if mode == 'no_cache':
             cmd += "--no_cache "

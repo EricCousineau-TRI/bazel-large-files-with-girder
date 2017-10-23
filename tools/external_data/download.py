@@ -21,7 +21,9 @@ parser.add_argument('--no_cache', action='store_true',
 parser.add_argument('--use_cache_symlink', action='store_true',
                     help='Use this if you are confident that your test will not modify the data.')
 parser.add_argument('--project_root', type=str, default='[find]',
-                        help='Project root. Can be "[find]" to find .project-root, or a relative or absolute directory.')
+                    help='Project root. Can be "[find]" to find .project-root, or a relative or absolute directory.')
+parser.add_argument('--is_bazel_build', action='store_true',
+                    help='If this is invoked via `macros.bzl`s `external_data`.')
 parser.add_argument('sha_file', type=str,
                     help='File containing the SHA-512 of the desired contents.')
 parser.add_argument('output_file', type=str,
@@ -37,9 +39,10 @@ from external_data import util
 project_root = util.parse_project_root_arg(args.project_root)
 util.eprint("PWD: {}".format(os.getcwd()))
 util.eprint("Project Root: {}".format(project_root))
-is_bazel = True
 
-if not is_bazel:
+direct_execd = not os.getcwd().endswith('/__main__')
+allow_relative_paths = args.is_bazel_build or direct_execd
+if not allow_relative_paths:
     # Ensure that we have absolute file paths.
     files = [args.sha_file, args.output_file]
     if not all(map(os.path.isabs, files)):
