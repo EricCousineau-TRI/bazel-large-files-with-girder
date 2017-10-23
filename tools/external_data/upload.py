@@ -81,13 +81,14 @@ def main():
     parser.add_argument('--do_cache', action='store_true')
     parser.add_argument('--project_root', type=str, default='[find]',
                         help='Project root. Can be "[find]" to find .project-root, or a relative or absolute directory.')
-    parser.add_argument('filepath', type=str)
+    parser.add_argument('filepaths', type=str, nargs='+')
     args = parser.parse_args()
     project_root = util.parse_project_root_arg(args.project_root)
 
     conf = util.Config(project_root, mode='upload')
     conf.authenticate()
-    upload(conf, args.filepath, args.do_cache)
+    for filepath in args.filepaths:
+        upload(conf, filepath, args.do_cache)
 
 
 if __name__ == '__main__':

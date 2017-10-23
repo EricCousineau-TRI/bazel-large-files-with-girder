@@ -6,17 +6,19 @@
 * Since this is intended to run under Bazel (`download` out of necessity, `upload` for the reasons listed above), we must specify absolute paths.
     * This can be done via the shorthand `~+` in `bash`, or `${PWD}` / `$(pwd)`.
 
+
 ## Configuration
 
-* Inspect the configuration in `tools/external_data/girder.repo.conf`. This is for the repository.
-* Inspect `.../girder.user.conf`. This is a template, which should live in `~/.girder.conf`. Ensure you add the appropriate API key so that you have authorized access.
+* Inspect the configuration in `./girder/girder.repo.conf`. This is for the repository.
+* Inspect `./girder/girder.user.conf`. This is a template, which should live in `~/.girder.conf`. Ensure you add the appropriate API key so that you have authorized access.
+
 
 ## Start Drafting a Large File
 
-Say you're in `/data`, and want to author `dragon.obj` to be used in a Bazel
+Say you're in `:/data`, and want to author `dragon.obj` to be used in a Bazel
 test.
 
-1. Add a Bazel target for this file indicating that it's external data and that you're in the process of developing the file. In `/data/BUILD.bazel`:
+1. Add a Bazel target for this file indicating that it's external data and that you're in the process of developing the file. In `:/data/BUILD.bazel`:
 
         external_data(
             file = "dragon.obj",
@@ -25,7 +27,7 @@ test.
 
     NOTE: Under the hood, this simply uses `exports_files(...)` to make the file a proper target, using the same name. This is useful for later points in time, when you want to edit a file that has already been versioned.
 
-2. Write a test, e.g. `//test:inspect_dragon`, that consumes this file:
+2. Write a test, e.g. `://test:inspect_dragon`, that consumes this file:
 
         sh_test(
             name = "inspect_dragon",
@@ -37,6 +39,7 @@ test.
 
     Run the test to ensure it works as expected.
 
+
 ## Upload the File for Deployment
 
 1. Run the `upload` script given the absolute path of the desired file:
@@ -47,33 +50,36 @@ test.
 
     If the file does not already exist on the desired server, this creates
     `~+/dragon.obj.sha512`, and will add the path of the file relative to this
-    repository (`/data/dragon.obj`) for server-side versioning.
+    repository (`:/data/dragon.obj`) for server-side versioning.
 
-2. Update `/data/BUILD.bazel` to indicate that you're now using the uploaded version (this tells Bazel to expect `~+/dragon.obj.sha512`):
+    NOTE: You may upload multiple files.
+
+2. Update `:/data/BUILD.bazel` to indicate that you're now using the uploaded version (this tells Bazel to expect `~+/dragon.obj.sha512`):
 
         external_data(
             file = "dragon.obj",
         )
 
-3. To test if Bazel can download this file, execute this in `/data`:
+3. To test if Bazel can download this file, execute this in `:/data`:
 
         bazel build :dragon.obj
 
     This should have downloaded, cached, and exposed this file in Bazel's workspace.
-    Now run `//test:inspect_dragon` (which should use Bazel's cached version) and ensure this works.
+    Now run `://test:inspect_dragon` (which should use Bazel's cached version) and ensure this works.
 
 4. Now commit the `*.sha512` file in Git.
 
+
 ## Edit the File Later
 
-Let's say you've removed `dragon.obj` from `/data`, but a month later you wish to revise it. To update the file:
+Let's say you've removed `dragon.obj` from `:/data`, but a month later you wish to revise it. To update the file:
 
 1. Download the corresponding SHA file:
 
         cd data
         bazel run //tools/external_data:download -- ~+/dragon.obj.sha512
 
-2. Change `/data/BUILD.bazel` back to development mode:
+2. Change `:/data/BUILD.bazel` back to development mode:
 
         external_data(
             file = "dragon.obj",
@@ -90,7 +96,7 @@ For groups of large data files, you could specify individual Bazel `external_dat
 
 However, if you have a large set of `*.${ext}.sha512` files, it may be easier to use the workspace's directory structure to glob these files. (You cannot reliably use `*.${ext}` without the suffix because these files would not exist normally.)
 
-As an example in `/data`:
+As an example in `:/data`:
 
     external_data_group(
         name = "meshes",
@@ -105,7 +111,8 @@ If you wish to expose all of these files within the Bazel build sandbox, you may
 
 NOTE: This interface will cache the files under `~/.cache/bazel-girder`, and thus you will not need to re-download these files.
 
-## Editing Files in a `*.sha512` group
+
+## Edit Files in a `*.sha512` group
 
 You may also use `mode = "devel"` in `external_data_group` if you wish to edit *all* of the files. If you do want this, you must have downloaded all of the files to your workspace (as shown down below).
 
@@ -140,11 +147,13 @@ NOTE: This will fail if one of the outputs already exists; you must specify `--f
 
 As above, these files are cached.
 
+
 ## Download One File to a Specific Location
 
 This is used in Bazel via `macros.bzl`:
 
     bazel run //tools/external_data:download -- ${file}.sha512 --output ${file}
+
 
 ## Download Files and Expose as Symlinks (Do Not Copy)
 
@@ -152,9 +161,10 @@ If you just need easy read-only access to files (and don't want to deal with Baz
 
     bazel run //tools/external_data:download -- --symlink_from_cache ~+/*.sha512
 
+
 ## TODO
 
-* Make `//tools/external_data` an actual external in Bazel, possibly something like `bazel-external-data`, such that we could do:
+* Make `://tools/external_data` an actual external in Bazel, possibly something like `bazel-external-data`, such that we could do:
 
         bazel run @external_data//:download -- ~+/${file}.sha512
         # OR
