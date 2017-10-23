@@ -131,15 +131,6 @@ def find_project_root(start_dir):
     return os.path.dirname(root_file)
 
 
-def parse_project_root_arg(project_root_arg):
-    if project_root_arg == '[find]':
-        project_root = find_project_root(os.getcwd())
-    else:
-        project_root = os.path.abspath(project_root_arg)
-    assert os.path.isdir(project_root)
-    return project_root
-
-
 # --- General Utilities ---
 
 def _lock_path(filepath):

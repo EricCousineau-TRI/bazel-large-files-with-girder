@@ -22,8 +22,6 @@ parser.add_argument('--no_cache', action='store_true',
                     help='Always download, and do not cache the result.')
 parser.add_argument('--symlink_from_cache', action='store_true',
                     help='Use a symlink from the cache rather than copying the file.')
-parser.add_argument('--project_root', type=str, default='[find]',
-                    help='Project root. Can be "[find]" to find .project-root, or a relative or absolute directory.')
 parser.add_argument('--allow_relpath', action='store_true',
                     help='Permit relative paths. Having this on by default makes using Bazel simpler.')
 parser.add_argument('-f', '--force', action='store_true',
@@ -40,7 +38,7 @@ args = parser.parse_args()
 sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(__file__), '..')))
 from external_data import util
 
-project_root = util.parse_project_root_arg(args.project_root)
+project_root = util.find_project_root(os.getcwd())
 # Get configuration.
 conf = util.Config(project_root, mode='download')
 
