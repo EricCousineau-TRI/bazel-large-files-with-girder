@@ -1,7 +1,6 @@
 filegroup(
     name = "girder_config",
     srcs = [
-        "girder/conf.sh",
         "girder/girder.gitconfig",
         "//:.git",
     ],

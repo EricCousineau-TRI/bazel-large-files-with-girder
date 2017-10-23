@@ -21,8 +21,6 @@ class Config(Bunch):
     def __init__(self, project_root, remote="master", mode='download'):
         Bunch.__init__(self)
         self.project_root = project_root
-        self._conf_exe = os.path.join(self.project_root, 'tools/external_data/girder/conf.sh')
-
         self.cache_dir = self._get_conf('core.cache-dir', os.path.expanduser("~/.cache/bazel-girder"))
 
         self.remote = remote
@@ -37,10 +35,21 @@ class Config(Bunch):
 
     def _get_conf(self, key, default=None):
         # TODO(eric.cousineau): 
-        cmd = [self._conf_exe, key]
+        user_conf = os.path.expanduser("~/.girder.gitconfig")
+        repo_conf = os.path.join(self.project_root, 'tools/external_data/girder/girder.gitconfig')
+        d = dict(repo_conf=repo_conf, user_conf=user_conf, key=key)
+
+        value = subshellc("git config -f {repo_conf} {key}".format(**d))
+        if value is not None:
+            return value
+        value = subshellc("git config -f {user_conf} {key}".format(**d))
+        if value is not None:
+            return value
         if default:
-            cmd.append(default)
-        return subshell(cmd)
+            return default
+        else:
+            raise RuntimeError(
+                "Could not resolve config: '{key}' in these files:\n  '{repo_conf}'\n  '{user_conf}'".format(**d))
 
     def authenticate(self):
         assert self.token is None
