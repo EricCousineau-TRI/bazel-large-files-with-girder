@@ -15,9 +15,7 @@ external_data(
 external_data_sha_group(
     name = "extra",
     sha_files = glob(['extra*.sha512']),
-    sha_files_devel = [
-        "extra2.obj.sha512",
-    ],
+    files_devel = glob(["extra*.obj"]),
 )
 
 # external_data_sha_group(

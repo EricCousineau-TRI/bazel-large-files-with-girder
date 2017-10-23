@@ -26,7 +26,7 @@ def external_data(file, mode='normal'):
             # TODO(eric.cousineau): Print full location of given file?
             print("\nexternal_data(file = '{}', mode = 'devel'):".format(file) +
                   "\n  Using local workspace file in development mode." +
-                  "\n  Please upload this file and commit the *.sha512 file.")
+                  "\n  Please upload this file and commit the *{} file.".format(SHA_SUFFIX))
         native.exports_files([file])
     elif mode in ['normal', 'no_cache']:
         name = "download_{}".format(file)
@@ -80,23 +80,25 @@ def external_data_group(name, files, mode='normal'):
     )
 
 
-def external_data_sha_group(name, sha_files, sha_files_devel = [], mode='normal'):
+def external_data_sha_group(name, sha_files, files_devel = [], mode='normal'):
     """ Enable globbing of *.sha512 files.
     @see external_data """
+
+    if files_devel and mode == "devel":
+        print('WARNING: You are specifying `files_devel` and `mode="devel", which is redundant. Try choosing one.')
+
     files = []
-    files_devel = []
-    sha_files_devel_consumed = []
+    files_devel_covered = []
     for sha_file in sha_files:
         if not sha_file.endswith(SHA_SUFFIX):
             fail("SHA file does end with '{}': '{}'".format(SHA_SUFFIX, sha_file))
         file = sha_file[:-len(SHA_SUFFIX)]
-        if sha_file in sha_files_devel:
-            files_devel.append(file)
-            sha_files_devel_consumed.append(sha_file)
+        if file in files_devel:
+            files_devel_covered.append(file)
         else:
             files.append(file)
 
-    if mode == 'devel' or not files_devel:
+    if not files_devel:
         # Define normally.
         external_data_group(
             name = name,
@@ -104,10 +106,16 @@ def external_data_sha_group(name, sha_files, sha_files_devel = [], mode='normal'
             mode = mode,
         )
     else:
-        # Ensure that `sha_files_devel` is a subset of `sha_files`
-        for sha_file in sha_files_devel:
-            if sha_file not in sha_files_devel_consumed:
-                fail("Devel sha file is NOT a subset of `sha_files`: {}".format(sha_file))
+        # Warn about any development files that are not a subset of `sha_files`.
+        # This way, the user knows that if they remove `files_devel`, even with `*.sha`, they will
+        # not get the same behavior.
+        not_covered = []
+        for file in files_devel:
+            if file not in files_devel_covered:
+                not_covered.append(file)
+        if not_covered:
+            print("\nWARNING: The following files do not have a corresponding `*{}` file in `sha_files`:\n  {}".format(
+                SHA_SUFFIX, "\n  ".join(not_covered)))
 
         # Define non-devel group.
         external_data_group(
