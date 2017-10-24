@@ -122,7 +122,7 @@ def find_project_root(start_dir):
     # which is the entire point of `.project-root`.
     #  (2) `.git` - What we really want, just need to make sure Git sees this.
     sentinel = '.git'
-    root_file = find_file_sentinel(start_dir, sentinel, file_type='dir')
+    root_file = find_file_sentinel(start_dir, sentinel, file_type='any')
     if os.path.islink(root_file):
         root_file = os.readlink(root_file)
         assert os.path.isabs(root_file)
@@ -166,6 +166,8 @@ def find_file_sentinel(start_dir, sentinel_file, file_type='file', max_depth=6):
         file_test = os.path.isfile
     elif file_type == 'dir':
         file_test = os.path.isdir
+    elif file_type == 'any':
+        file_test = os.path.exists
     else:
         raise RuntimeError("Internal error: Invalid file_type {}".format(file_type))
     assert len(cur_dir) > 0
