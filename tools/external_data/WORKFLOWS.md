@@ -189,5 +189,22 @@ NOTE: Ensure that you update your user-level authentication bits in `~/.girder.c
         # OR
         girder-cli git download ${file}
 
+    * This should allow per-project configuration settings to be specified via the project's incantation of `external_data/BUILD.bazel` and `external_data/macros.bzl`. Specifically, should define where the project root is (via the sentinel for Bazel hackery)
+
+* Rather than read the symlink on the sentinel, try reading the symlink on the `sha512` file. This (a) avoids the need for a Bazel-exposed sentinel, and (b) would pave the way for per-file configuration.
+
+* Enable different backend providers.
+    * Work with a backend provider which also has the ability to provide symlinks, if possible.
+    * Make the entire setup agnostic to which backend is actually used.
+
+* Enable per-file / per-directory configuration for reproduction of external experiments.
+    * e.g. If reproducing results for DART, we can link to the original files via another backend (e.g. HTTP, HTTP archive).
+        * This way we don't HAVE to re-host files, but CAN if we wish to provide a reliable mirror.
+    * Can define a `.external-data` file per directory which can provide a new repository. This would have its own `master` vs `devel` remote.
+        * Can either use a unique remote, or provide an overlay.
+
+* Consider renaming `.girder.conf` to `.external-data`, move repo stuff to repo root.
+
 * If possible, merge scripts into `girder_client` if appropriate. (Though it may be too heavily Bazel-based.)
 * Revisit the use of `git annex` as a frontend with more complex merging mechanisms.
+    * Can consider using `git annex` / `git lfs` as a backend, if it's useful for whatever reason.
