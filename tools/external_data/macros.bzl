@@ -23,6 +23,8 @@ def external_data(file, mode='normal'):
     # Use this?
     # https://docs.bazel.build/versions/master/skylark/lib/actions.html#run_shell
     # Nope. Only allows using existing PATH / LD_LIBRARY_PATH or not.
+    # Would have to specify environment variables here, and would prefer to not need
+    # this...
 
     if mode == 'devel':
         # TODO(eric.cousineau): It'd be nice if there is a way to (a) check if there is
