@@ -208,3 +208,5 @@ NOTE: Ensure that you update your user-level authentication bits in `~/.girder.c
 * If possible, merge scripts into `girder_client` if appropriate. (Though it may be too heavily Bazel-based.)
 * Revisit the use of `git annex` as a frontend with more complex merging mechanisms.
     * Can consider using `git annex` / `git lfs` as a backend, if it's useful for whatever reason.
+* Consider placing `${file}.sha512` files as `.${file}.sha512` to avoid polluting visible files.
+
