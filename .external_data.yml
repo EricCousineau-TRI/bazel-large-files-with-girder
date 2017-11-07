@@ -1,0 +1,11 @@
+remote: master
+
+remotes:
+    master:
+        backend: girder_hashsum
+        url: https://drake-girder.csail.mit.edu
+        folder_id: 59e12e91c3b64e0f87021c77  # Drake/test_collection
+    devel:
+        backend: girder_hashsum
+        url: https://drake-girder.csail.mit.edu
+        folder_id: <something else> # e.g. Drake/test_devel_collection

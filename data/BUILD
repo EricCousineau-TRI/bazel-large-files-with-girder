@@ -1,13 +1,7 @@
-
-#
-# Very small file directly added to the source tree can be
-# exported using "exports_files". Exporting a file is required
-# so that it can be added as test dependency using this.
-#
-
-#exports_files([
-#  "very_small_dragon.obj"
-#])
+load("//tools:external_data.bzl",
+    "external_data",
+    "add_external_data_tests",
+)
 
 
 #
@@ -17,12 +11,10 @@
 # them when needed.
 #
 
-genrule(
-  name="download_dragon_obj",
-  srcs=["dragon.obj.sha512"],
-  outs=["dragon.obj"],
-  cmd="$(location //tools:download_data) $(location dragon.obj.sha512) $@",
-  tools=["//tools:download_data"],
-  visibility=["//visibility:public"],
+external_data(
+    file = "dragon.obj",
+    # mode = "devel",
+    visibility = ["//visibility:public"],
 )
 
+add_external_data_tests()
