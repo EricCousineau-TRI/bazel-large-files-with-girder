@@ -1,3 +1,0 @@
-[submodule "thirdparty/external_data_bazel"]
-	path = thirdparty/external_data_bazel
-	url = https://github.com/EricCousineau-TRI/external_data_bazel.git

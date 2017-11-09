@@ -7,9 +7,9 @@ new_http_archive(
     build_file_content = "exports_files(['objviewer'])"
 )
 
-# TODO(eric.cousineau): Package items to be better-deployed with Bazel.
-# Move tests (with symlinks) to another location? Or just copy them?
-local_repository(
+http_archive(
     name = "external_data_bazel_pkg",
-    path = "thirdparty/external_data_bazel",
+    url = "https://github.com/EricCousineau-TRI/external_data_bazel/archive/ce71398ac319cf4dedcf3eed3ae5c2c25e4eb1b4.zip",
+    sha256 = "9f3ade94ee039f99074809da920d55fe7202e01e4861e9e76f0a5e0c7db39eb0",
+    strip_prefix = "external_data_bazel-ce71398ac319cf4dedcf3eed3ae5c2c25e4eb1b4",
 )
